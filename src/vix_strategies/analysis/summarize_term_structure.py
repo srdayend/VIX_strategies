@@ -4,7 +4,7 @@ import json
 
 import pandas as pd
 
-from .loaders import SETTLE_COLUMNS, build_analysis_frame
+from ..data.excel_loaders import SETTLE_COLUMNS, build_analysis_frame
 
 
 def summarize_term_structure(df: pd.DataFrame) -> dict:

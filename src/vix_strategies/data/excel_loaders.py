@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from .config import get_source_paths, validate_source_paths
+from .source_paths import get_source_paths, validate_source_paths
 
 
 SETTLE_COLUMNS = [f"M{i} Settle" for i in range(1, 10)]
