@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from .hedged_rolldown import HedgedRollDownConfig, performance_stats, run_hedged_rolldown
+from ..backtests.hedged_vx1_vx2_rolldown import HedgedRollDownConfig, performance_stats, run_hedged_rolldown
 
 
 RATIOS = [0.65, 0.80]
@@ -19,25 +19,17 @@ def run_grid() -> pd.DataFrame:
             for exit_ in EXIT_SLOPES:
                 if exit_ >= entry:
                     continue
-                config = HedgedRollDownConfig(
-                    hedge_ratio=ratio,
-                    entry_slope=entry,
-                    exit_slope=exit_,
-                    vx1_cap=30.0,
-                    stop_loss=-0.02,
-                    stop_clip=True,
-                    avoid_roll=True,
-                )
+                config = HedgedRollDownConfig(hedge_ratio=ratio, entry_slope=entry, exit_slope=exit_, vx1_cap=30.0, stop_loss=-0.02, stop_clip=True, avoid_roll=True)
                 result = run_hedged_rolldown(config)
                 rows.append({"ratio": ratio, "entry_slope": entry, "exit_slope": exit_, **performance_stats(result)})
     return pd.DataFrame(rows)
 
 
 def main() -> None:
-    output_dir = Path("reports/generated/stopclip_parameter_grid")
+    output_dir = Path("reports/generated/stop_loss_parameter_grid")
     output_dir.mkdir(parents=True, exist_ok=True)
     grid = run_grid()
-    grid.to_csv(output_dir / "stopclip_grid_065_080.csv", index=False)
+    grid.to_csv(output_dir / "stop_clipped_grid_065_080.csv", index=False)
 
     for metric in ["sharpe", "cagr", "mdd", "exposure", "stops"]:
         for ratio in RATIOS:

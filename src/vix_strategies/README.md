@@ -1,40 +1,48 @@
 # Code Module Guide
 
-This package contains loaders, feature engineering helpers, and research backtest scripts for the VIX strategies project.
+The package is split by responsibility so file names describe the work they do before you open them.
 
-## Stable Data Layer
+## `data/`
 
-- `config.py` resolves local source-file paths and environment-variable overrides.
-- `loaders.py` loads the Excel workbooks and builds reusable analysis frames.
+- `source_paths.py` resolves local source-file paths and environment-variable overrides.
+- `excel_loaders.py` loads the Excel workbooks and builds reusable analysis frames.
 
-These modules are shared by the analysis and backtest scripts. Keep path handling and workbook parsing here instead of duplicating it inside experiment files.
+## `analysis/`
 
-## Analysis Scripts
-
-- `analysis.py` summarizes term-structure coverage, settlement distributions, slope distributions, and VIX regimes.
+- `summarize_term_structure.py` summarizes coverage, settlement distributions, slope distributions, and VIX regimes.
 
 Run:
 
 ```bash
-python -m src.vix_strategies.analysis
+python -m src.vix_strategies.analysis.summarize_term_structure
 ```
 
-## Backtest And Experiment Scripts
+## `backtests/`
 
-- `backtest.py` is the earliest generic hedged-carry scaffold using rank-based M1/M2 returns.
-- `hedged_rolldown.py` implements the main `r * VX1 - VX2` hedged roll-down strategy with entry/exit hysteresis, VX1 cap, roll-day avoidance, and stop-loss options.
-- `stopclip_parameter_grid.py` runs the entry/exit threshold grid for `0.65` and `0.80` after stop clipping.
-- `compare_hedge_ratios.py` compares `0.65` and `0.80` by regime and basis bucket.
-- `regime_backtest_grid.py` tests VIX, slope, and basis regime overlays.
-- `peer_research_reproduction.py` reproduces pieces of the peer research package.
+- `simple_m1_m2_carry_backtest.py` is the earliest rank-based M1/M2 carry scaffold.
+- `hedged_vx1_vx2_rolldown.py` is the main `r * VX1 - VX2` strategy engine with entry/exit hysteresis, VX1 cap, roll-day avoidance, and stop-loss options.
 
-Example runs:
+Run:
 
 ```bash
-python -m src.vix_strategies.hedged_rolldown
-python -m src.vix_strategies.stopclip_parameter_grid
-python -m src.vix_strategies.compare_hedge_ratios
-python -m src.vix_strategies.regime_backtest_grid
+python -m src.vix_strategies.backtests.simple_m1_m2_carry_backtest
+python -m src.vix_strategies.backtests.hedged_vx1_vx2_rolldown
+```
+
+## `experiments/`
+
+- `stop_loss_parameter_grid.py` runs the stop-clipped entry/exit threshold grid for `0.65` and `0.80`.
+- `compare_065_vs_080_hedge_ratios.py` compares `0.65` and `0.80` by regime and basis bucket.
+- `regime_overlay_grid.py` tests VIX, slope, and basis regime overlays.
+- `reproduce_peer_research.py` reproduces pieces of the peer research package.
+
+Run:
+
+```bash
+python -m src.vix_strategies.experiments.stop_loss_parameter_grid
+python -m src.vix_strategies.experiments.compare_065_vs_080_hedge_ratios
+python -m src.vix_strategies.experiments.regime_overlay_grid
+python -m src.vix_strategies.experiments.reproduce_peer_research
 ```
 
 ## Output Convention
@@ -44,18 +52,3 @@ Scripts that generate files should write under:
 ```text
 reports/generated/<experiment_name>/
 ```
-
-This keeps generated CSVs separate from handwritten research notes.
-
-## Cleanup Backlog
-
-Potential future package split:
-
-```text
-src/vix_strategies/data/          config and workbook loaders
-src/vix_strategies/analysis/      summaries and diagnostics
-src/vix_strategies/backtests/     strategy engines and parameter grids
-src/vix_strategies/experiments/   one-off research reproductions
-```
-
-Do this only after the current scripts are stable enough to tolerate import-path changes.

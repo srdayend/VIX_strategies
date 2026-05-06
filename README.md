@@ -2,7 +2,7 @@
 
 Research workspace for VIX futures term-structure analysis and hedged roll-down carry strategies.
 
-The repository currently uses local Excel workbooks as source data. It is a research lab, not yet a production trading system: the goal is to make the data, assumptions, experiments, and conclusions easy to audit as the strategy evolves.
+The repository uses local Excel workbooks as source data. It is a research lab, not yet a production trading system: the goal is to keep the data, assumptions, experiments, and conclusions easy to audit.
 
 ## Current Thesis
 
@@ -23,10 +23,15 @@ Core research view:
 ## Repository Map
 
 ```text
-src/vix_strategies/      Python loaders, analysis scripts, and backtest experiments
-docs/                    Human-written research notes, plans, and conclusions
-reports/                 Generated analysis outputs and result tables
-requirements.txt         Minimal Python dependencies
+src/vix_strategies/
+  data/           Source path resolution and Excel workbook loaders
+  analysis/       Data summaries and diagnostics
+  backtests/      Reusable strategy engines and baseline backtests
+  experiments/    Parameter grids, peer reproductions, and one-off comparisons
+
+docs/             Human-written research notes, plans, and conclusions
+reports/          Generated analysis outputs and result tables
+requirements.txt  Minimal Python dependencies
 ```
 
 Start here:
@@ -35,23 +40,19 @@ Start here:
 - [`src/vix_strategies/README.md`](src/vix_strategies/README.md): code module guide and execution commands.
 - [`reports/README.md`](reports/README.md): generated-output conventions.
 
-## Research Notes
+## Quick Start
 
-Recommended reading order:
+Install dependencies in a Python environment with `pandas`, `numpy`, and `openpyxl`, then run from the repository root:
 
-1. [`docs/peer_research_onepage.md`](docs/peer_research_onepage.md) - peer strategy baseline and economic framing.
-2. [`docs/initial_findings.md`](docs/initial_findings.md) - first-pass data facts and naive backtest diagnostic.
-3. [`docs/regime_framework.md`](docs/regime_framework.md) - VIX level, front slope, and VX1/VIX basis regime framework.
-4. [`docs/hedge_ratio_065_vs_080_analysis.md`](docs/hedge_ratio_065_vs_080_analysis.md) - deep dive on `0.65` versus `0.80`.
-5. [`docs/stopclip_parameter_grid_analysis.md`](docs/stopclip_parameter_grid_analysis.md) - entry/exit grid after stop-loss clipping.
-6. [`docs/regime_backtest_grid_analysis.md`](docs/regime_backtest_grid_analysis.md) - regime overlay grid and interpretation.
+```bash
+python -m src.vix_strategies.analysis.summarize_term_structure
+python -m src.vix_strategies.backtests.hedged_vx1_vx2_rolldown
+python -m src.vix_strategies.experiments.stop_loss_parameter_grid
+python -m src.vix_strategies.experiments.compare_065_vs_080_hedge_ratios
+python -m src.vix_strategies.experiments.regime_overlay_grid
+```
 
-Planning notes:
-
-- [`docs/data_sources.md`](docs/data_sources.md)
-- [`docs/analysis_plan.md`](docs/analysis_plan.md)
-- [`docs/backtesting_plan.md`](docs/backtesting_plan.md)
-- [`docs/peer_strategy_crosscheck_080.md`](docs/peer_strategy_crosscheck_080.md)
+Generated CSV outputs should be written under `reports/generated/`.
 
 ## Source Data
 
@@ -67,18 +68,16 @@ Environment variables can override these paths:
 - `VIX_FUTURES_BY_MATURITY_PATH`
 - `VIX_INDEX_PATH`
 
-## Quick Start
+## Research Notes
 
-Install dependencies in a Python environment with `pandas`, `numpy`, and `openpyxl`, then run from the repository root:
+Recommended reading order:
 
-```bash
-python -m src.vix_strategies.analysis
-python -m src.vix_strategies.hedged_rolldown
-python -m src.vix_strategies.stopclip_parameter_grid
-python -m src.vix_strategies.regime_backtest_grid
-```
-
-Generated CSV outputs should be written under `reports/generated/`.
+1. [`docs/peer_research_onepage.md`](docs/peer_research_onepage.md) - peer strategy baseline and economic framing.
+2. [`docs/initial_findings.md`](docs/initial_findings.md) - first-pass data facts and naive backtest diagnostic.
+3. [`docs/regime_framework.md`](docs/regime_framework.md) - VIX level, front slope, and VX1/VIX basis regime framework.
+4. [`docs/hedge_ratio_065_vs_080_analysis.md`](docs/hedge_ratio_065_vs_080_analysis.md) - deep dive on `0.65` versus `0.80`.
+5. [`docs/stopclip_parameter_grid_analysis.md`](docs/stopclip_parameter_grid_analysis.md) - entry/exit grid after stop-loss clipping.
+6. [`docs/regime_backtest_grid_analysis.md`](docs/regime_backtest_grid_analysis.md) - regime overlay grid and interpretation.
 
 ## Current Data Snapshot
 
@@ -90,25 +89,3 @@ The latest documented first pass used source data with:
 - VIX index coverage: `1990-01-02` to `2026-05-05`
 - M2 > M1 contango days: about `79.0%`
 - M2 < M1 backwardation days: about `15.9%`
-
-VIX regime snapshot:
-
-| VIX close bucket | Days | Contango rate | Avg M1-M2 % | Avg M1-M4 % |
-|---|---:|---:|---:|---:|
-| <15 | 2,137 | 94.6% | 9.00% | 20.46% |
-| 15-20 | 1,710 | 84.9% | 6.38% | 13.77% |
-| 20-25 | 865 | 68.6% | 4.18% | 7.18% |
-| 25-30 | 416 | 59.9% | 1.41% | 0.59% |
-| 30+ | 448 | 19.9% | -5.08% | -11.40% |
-
-## Cleanup Backlog
-
-The next cleanup pass should decide whether to physically split the code into stable modules and experiment scripts, for example:
-
-```text
-src/vix_strategies/data/
-src/vix_strategies/research/
-src/vix_strategies/backtests/
-```
-
-For now, this branch keeps file paths stable and adds navigation so existing scripts and links continue to work.

@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from .loaders import load_term_structure, load_vix_index
+from ..data.excel_loaders import load_term_structure, load_vix_index
 
 
 TRADING_DAYS = 252
@@ -30,23 +30,14 @@ def _prepare_frame() -> pd.DataFrame:
     term = load_term_structure()
     vix = load_vix_index()[["Date", "Close"]].rename(columns={"Close": "VIX"})
     df = term[["Trade Date", "M1 Settle", "M2 Settle", "M1 Month", "M2 Month"]].rename(
-        columns={
-            "Trade Date": "Date",
-            "M1 Settle": "VX1",
-            "M2 Settle": "VX2",
-            "M1 Month": "VX1_Month",
-            "M2 Month": "VX2_Month",
-        }
+        columns={"Trade Date": "Date", "M1 Settle": "VX1", "M2 Settle": "VX2", "M1 Month": "VX1_Month", "M2 Month": "VX2_Month"}
     )
     df = df.merge(vix, on="Date", how="left")
     df = df.dropna(subset=["Date", "VX1", "VX2"]).sort_values("Date").reset_index(drop=True)
     df = df[(df["VX1"] > 0) & (df["VX2"] > 0)].reset_index(drop=True)
     df["slope"] = np.log(df["VX2"] / df["VX1"])
     df["basis"] = df["VX1"] / df["VIX"] - 1
-    df["roll_day"] = (
-        df["VX1_Month"].ne(df["VX1_Month"].shift(1))
-        | df["VX2_Month"].ne(df["VX2_Month"].shift(1))
-    ).fillna(False)
+    df["roll_day"] = (df["VX1_Month"].ne(df["VX1_Month"].shift(1)) | df["VX2_Month"].ne(df["VX2_Month"].shift(1))).fillna(False)
     return df
 
 
@@ -54,46 +45,33 @@ def _risk_signal(data: pd.DataFrame, signal: str) -> pd.Series:
     vix = data["VIX"]
     slope = data["slope"]
     basis = data["basis"]
-    if signal == "none":
-        return pd.Series(False, index=data.index)
-    if signal == "vix_ge_25":
-        return vix >= 25
-    if signal == "vix_ge_30":
-        return vix >= 30
-    if signal == "slope_lt_0":
-        return slope < 0
-    if signal == "slope_lt_3":
-        return slope < 0.03
-    if signal == "basis_ge_5":
-        return basis >= 0.05
-    if signal == "basis_ge_10":
-        return basis >= 0.10
-    if signal == "basis_ge_15":
-        return basis >= 0.15
-    if signal == "vix_ge_25_or_slope_lt_3":
-        return (vix >= 25) | (slope < 0.03)
-    if signal == "vix_ge_30_or_slope_lt_0":
-        return (vix >= 30) | (slope < 0)
-    if signal == "vix_ge_25_or_basis_ge_10":
-        return (vix >= 25) | (basis >= 0.10)
-    if signal == "basis_ge_10_or_slope_lt_3":
-        return (basis >= 0.10) | (slope < 0.03)
-    if signal == "vix_ge_25_or_slope_lt_3_or_basis_ge_10":
-        return (vix >= 25) | (slope < 0.03) | (basis >= 0.10)
-    if signal == "carry_quality_bad":
-        return (vix >= 20) | (slope < 0.08) | (basis >= 0.10)
-    if signal == "strong_only_bad":
-        return ~((vix < 15) & (slope >= 0.08) & (basis < 0.10))
-    raise ValueError(f"Unknown signal: {signal}")
+    signals = {
+        "none": pd.Series(False, index=data.index),
+        "vix_ge_25": vix >= 25,
+        "vix_ge_30": vix >= 30,
+        "slope_lt_0": slope < 0,
+        "slope_lt_3": slope < 0.03,
+        "basis_ge_5": basis >= 0.05,
+        "basis_ge_10": basis >= 0.10,
+        "basis_ge_15": basis >= 0.15,
+        "vix_ge_25_or_slope_lt_3": (vix >= 25) | (slope < 0.03),
+        "vix_ge_30_or_slope_lt_0": (vix >= 30) | (slope < 0),
+        "vix_ge_25_or_basis_ge_10": (vix >= 25) | (basis >= 0.10),
+        "basis_ge_10_or_slope_lt_3": (basis >= 0.10) | (slope < 0.03),
+        "vix_ge_25_or_slope_lt_3_or_basis_ge_10": (vix >= 25) | (slope < 0.03) | (basis >= 0.10),
+        "carry_quality_bad": (vix >= 20) | (slope < 0.08) | (basis >= 0.10),
+        "strong_only_bad": ~((vix < 15) & (slope >= 0.08) & (basis < 0.10)),
+    }
+    if signal not in signals:
+        raise ValueError(f"Unknown signal: {signal}")
+    return signals[signal]
 
 
 def run_regime_backtest(config: RegimeBacktestConfig) -> pd.DataFrame:
     data = _prepare_frame()
     risk = _risk_signal(data, config.signal).fillna(False)
-
     denom = config.hedge_ratio * data["VX1"].shift(1) + data["VX2"].shift(1)
-    data["raw_ret"] = (config.hedge_ratio * data["VX1"].diff() - data["VX2"].diff()) / denom
-    data["raw_ret"] = data["raw_ret"].fillna(0.0)
+    data["raw_ret"] = ((config.hedge_ratio * data["VX1"].diff() - data["VX2"].diff()) / denom).fillna(0.0)
 
     held = np.zeros(len(data), dtype=int)
     weight = np.zeros(len(data), dtype=float)
@@ -107,20 +85,11 @@ def run_regime_backtest(config: RegimeBacktestConfig) -> pd.DataFrame:
         if position:
             held[i] = 1
             prev_risk = bool(risk.iloc[i - 1]) if i > 0 else False
-            if config.action == "scale_half" and prev_risk:
-                weight[i] = config.scale
-                scaled_day[i] = 1
-            else:
-                weight[i] = 1.0
+            weight[i] = config.scale if config.action == "scale_half" and prev_risk else 1.0
+            scaled_day[i] = int(config.action == "scale_half" and prev_risk)
 
         if position:
-            exit_now = False
-            if data.loc[i, "slope"] < config.exit_slope:
-                exit_now = True
-            if data.loc[i, "VX1"] > config.vx1_cap:
-                exit_now = True
-            if config.avoid_roll and data.loc[i, "roll_day"]:
-                exit_now = True
+            exit_now = data.loc[i, "slope"] < config.exit_slope or data.loc[i, "VX1"] > config.vx1_cap or (config.avoid_roll and data.loc[i, "roll_day"])
             if config.stop_loss is not None and data.loc[i, "raw_ret"] <= config.stop_loss:
                 exit_now = True
                 stop_hit[i] = 1
@@ -131,14 +100,9 @@ def run_regime_backtest(config: RegimeBacktestConfig) -> pd.DataFrame:
                 position = False
 
         if not position:
-            enter_now = (
-                data.loc[i, "slope"] > config.entry_slope
-                and data.loc[i, "VX1"] < config.vx1_cap
-                and (not config.avoid_roll or not data.loc[i, "roll_day"])
-            )
+            enter_now = data.loc[i, "slope"] > config.entry_slope and data.loc[i, "VX1"] < config.vx1_cap and (not config.avoid_roll or not data.loc[i, "roll_day"])
             if config.action in {"no_entry", "exit", "scale_half"} and bool(risk.iloc[i]):
-                if enter_now:
-                    blocked_entry[i] = 1
+                blocked_entry[i] = int(enter_now)
                 enter_now = False
             if enter_now:
                 position = True
@@ -161,10 +125,9 @@ def performance_stats(result: pd.DataFrame) -> dict[str, float | int]:
     ret = result["ret"].fillna(0.0)
     years = (result["Date"].iloc[-1] - result["Date"].iloc[0]).days / 365.25
     annual_vol = ret.std() * np.sqrt(TRADING_DAYS)
-    cagr = result["equity"].iloc[-1] ** (1 / years) - 1
     return {
         "total_return": result["equity"].iloc[-1] - 1,
-        "cagr": cagr,
+        "cagr": result["equity"].iloc[-1] ** (1 / years) - 1,
         "ann_vol": annual_vol,
         "sharpe": (ret.mean() * TRADING_DAYS) / annual_vol if annual_vol > 0 else np.nan,
         "mdd": result["drawdown"].min(),
@@ -185,41 +148,16 @@ def performance_stats(result: pd.DataFrame) -> dict[str, float | int]:
 def run_grid() -> pd.DataFrame:
     strategy_configs = [("peer_8_5", 0.08, 0.05), ("sharp_8_7", 0.08, 0.07)]
     ratios = [0.65, 0.80]
-    signals = [
-        "none",
-        "vix_ge_25",
-        "vix_ge_30",
-        "slope_lt_0",
-        "slope_lt_3",
-        "basis_ge_5",
-        "basis_ge_10",
-        "basis_ge_15",
-        "vix_ge_25_or_slope_lt_3",
-        "vix_ge_30_or_slope_lt_0",
-        "vix_ge_25_or_basis_ge_10",
-        "basis_ge_10_or_slope_lt_3",
-        "vix_ge_25_or_slope_lt_3_or_basis_ge_10",
-        "carry_quality_bad",
-        "strong_only_bad",
-    ]
+    signals = ["none", "vix_ge_25", "vix_ge_30", "slope_lt_0", "slope_lt_3", "basis_ge_5", "basis_ge_10", "basis_ge_15", "vix_ge_25_or_slope_lt_3", "vix_ge_30_or_slope_lt_0", "vix_ge_25_or_basis_ge_10", "basis_ge_10_or_slope_lt_3", "vix_ge_25_or_slope_lt_3_or_basis_ge_10", "carry_quality_bad", "strong_only_bad"]
     actions = ["none", "no_entry", "exit", "scale_half"]
-
     rows = []
     for label, entry, exit_ in strategy_configs:
         for ratio in ratios:
             for signal in signals:
                 for action in actions:
-                    if signal == "none" and action != "none":
+                    if (signal == "none" and action != "none") or (signal != "none" and action == "none"):
                         continue
-                    if signal != "none" and action == "none":
-                        continue
-                    config = RegimeBacktestConfig(
-                        hedge_ratio=ratio,
-                        entry_slope=entry,
-                        exit_slope=exit_,
-                        signal=signal,
-                        action=action,
-                    )
+                    config = RegimeBacktestConfig(hedge_ratio=ratio, entry_slope=entry, exit_slope=exit_, signal=signal, action=action)
                     result = run_regime_backtest(config)
                     rows.append({"config": label, "ratio": ratio, "signal": signal, "action": action, **performance_stats(result)})
     grid = pd.DataFrame(rows)
@@ -232,7 +170,7 @@ def run_grid() -> pd.DataFrame:
 
 
 def main() -> None:
-    output_dir = Path("reports/generated/regime_backtest_grid")
+    output_dir = Path("reports/generated/regime_overlay_grid")
     output_dir.mkdir(parents=True, exist_ok=True)
     grid = run_grid()
     grid.to_csv(output_dir / "regime_overlay_grid_stopclip.csv", index=False)

@@ -8,9 +8,10 @@ Use `reports/generated/` for machine-created files so source documents and gener
 
 ```text
 reports/generated/
-  hedge_ratio_065_vs_080/
-  stopclip_parameter_grid/
-  regime_backtest_grid/
+  compare_065_vs_080_hedge_ratios/
+  stop_loss_parameter_grid/
+  regime_overlay_grid/
+  reproduce_peer_research/
 ```
 
 ## Rules
@@ -22,6 +23,7 @@ reports/generated/
 
 ## Current Generators
 
-- `python -m src.vix_strategies.compare_hedge_ratios`
-- `python -m src.vix_strategies.stopclip_parameter_grid`
-- `python -m src.vix_strategies.regime_backtest_grid`
+- `python -m src.vix_strategies.experiments.compare_065_vs_080_hedge_ratios`
+- `python -m src.vix_strategies.experiments.stop_loss_parameter_grid`
+- `python -m src.vix_strategies.experiments.regime_overlay_grid`
+- `python -m src.vix_strategies.experiments.reproduce_peer_research`

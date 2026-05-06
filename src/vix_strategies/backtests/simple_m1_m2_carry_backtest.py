@@ -6,11 +6,11 @@ from dataclasses import asdict, dataclass
 import numpy as np
 import pandas as pd
 
-from .loaders import build_analysis_frame
+from ..data.excel_loaders import build_analysis_frame
 
 
 @dataclass(frozen=True)
-class BacktestConfig:
+class SimpleCarryBacktestConfig:
     front: str = "M1 Settle"
     hedge: str = "M2 Settle"
     hedge_ratio: float = 1.0
@@ -22,7 +22,7 @@ class BacktestConfig:
     transaction_cost_bps: float = 0.0
 
 
-def run_hedged_carry_backtest(df: pd.DataFrame, config: BacktestConfig) -> pd.DataFrame:
+def run_simple_m1_m2_carry_backtest(df: pd.DataFrame, config: SimpleCarryBacktestConfig) -> pd.DataFrame:
     data = df[["Trade Date", config.front, config.hedge, config.signal, "VIX Close"]].copy()
     data = data.dropna().sort_values("Trade Date").reset_index(drop=True)
     data = data[(data[config.front] > 0) & (data[config.hedge] > 0)].reset_index(drop=True)
@@ -31,12 +31,10 @@ def run_hedged_carry_backtest(df: pd.DataFrame, config: BacktestConfig) -> pd.Da
     if config.max_vix is not None:
         active &= data["VIX Close"] <= config.max_vix
 
-    # Signal is known at close t; position applies to close-to-close return from t to t+1.
     data["position"] = active.astype(float).shift(1).fillna(0.0) * config.exposure_fraction
     data["front_return"] = data[config.front].pct_change()
     data["hedge_return"] = data[config.hedge].pct_change()
 
-    # Research approximation: short front future, long deferred future hedge.
     pair_return = -data["front_return"] + config.hedge_ratio * data["hedge_return"]
     data["gross_return"] = data["position"] * pair_return
     turnover = data["position"].diff().abs().fillna(data["position"].abs())
@@ -75,9 +73,9 @@ def summarize_backtest(result: pd.DataFrame) -> dict:
 
 
 def main() -> None:
-    config = BacktestConfig()
+    config = SimpleCarryBacktestConfig()
     df = build_analysis_frame()
-    result = run_hedged_carry_backtest(df, config)
+    result = run_simple_m1_m2_carry_backtest(df, config)
     output = {"config": asdict(config), "summary": summarize_backtest(result)}
     print(json.dumps(output, indent=2))
 
