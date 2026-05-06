@@ -17,6 +17,21 @@ The first phase is to understand the instrument behavior before optimizing a tra
 - Steep contango: top quantile of M1-M2 percentage slope
 - Deep backwardation: bottom quantile of M1-M2 percentage slope
 
+## Regime framework
+
+Primary regime document: [`regime_framework.md`](regime_framework.md)
+
+Use two simple, interpretable axes first:
+
+- VIX index level: `<15`, `15-20`, `20-30`, `>=30`
+- Front futures slope: `M2 / M1 - 1`, bucketed as `<0%`, `0-3%`, `3-8%`, `>=8%`
+
+Initial trading-state interpretation:
+
+- Carry ON: `VIX < 20` and `front_slope >= 3%`
+- Carry HALF / selective: `20 <= VIX < 30` and `front_slope >= 8%`
+- Carry OFF: `VIX >= 30` or `front_slope < 0%`
+
 ## Regime conditioning
 
 Analyze all distributions conditional on:
