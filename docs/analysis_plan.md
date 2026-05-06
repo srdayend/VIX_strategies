@@ -32,6 +32,20 @@ Initial trading-state interpretation:
 - Carry HALF / selective: `20 <= VIX < 30` and `front_slope >= 8%`
 - Carry OFF: `VIX >= 30` or `front_slope < 0%`
 
+## Hedge ratio comparison
+
+Primary comparison document: [`hedge_ratio_065_vs_080_analysis.md`](hedge_ratio_065_vs_080_analysis.md)
+
+Compare the economically anchored `0.65VX1 - VX2` against the highest-Sharpe `0.80VX1 - VX2` under identical rules:
+
+- Entry: `ln(VX2/VX1) > 8%`
+- Exit: `ln(VX2/VX1) < 5%`
+- VX1 cap: `30`
+- Stop: `-2%`
+- Roll-day avoidance
+
+The first pass shows that `0.80` wins mostly through stronger right-tail participation when VX1 is not expensive versus spot VIX, while it loses quality in high `VX1/VIX` basis zones.
+
 ## Regime conditioning
 
 Analyze all distributions conditional on:
