@@ -70,6 +70,7 @@ Backtest roll-down carry and hedged variants:
 - [`docs/peer_research_onepage.md`](docs/peer_research_onepage.md): one-page summary of the peer research package.
 - [`docs/hedge_ratio_065_vs_080_analysis.md`](docs/hedge_ratio_065_vs_080_analysis.md): deep dive comparing `0.65VX1 - VX2` and `0.80VX1 - VX2`.
 - [`docs/stopclip_parameter_grid_analysis.md`](docs/stopclip_parameter_grid_analysis.md): entry/exit grid after stop-loss clipping.
+- [`docs/regime_backtest_grid_analysis.md`](docs/regime_backtest_grid_analysis.md): regime overlays for `0.65` and `0.80` strategies.
 
 ## Repository structure
 
