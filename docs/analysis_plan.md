@@ -46,6 +46,19 @@ Compare the economically anchored `0.65VX1 - VX2` against the highest-Sharpe `0.
 
 The first pass shows that `0.80` wins mostly through stronger right-tail participation when VX1 is not expensive versus spot VIX, while it loses quality in high `VX1/VIX` basis zones.
 
+## Stop-clipped threshold grid
+
+Primary grid document: [`stopclip_parameter_grid_analysis.md`](stopclip_parameter_grid_analysis.md)
+
+Test `0.65` and `0.80` across entry/exit thresholds after changing the stop assumption from close-only loss realization to intraday stop clipping:
+
+- Stop logic: `ret = max(unclipped_ret, -2%)`
+- Entry grid: `6%` to `12%`
+- Exit grid: `3%` to `7%`
+- Constraint: `exit < entry`
+
+Initial read-through: stop clipping materially improves both ratios; `0.80` still dominates the top Sharpe region; exit thresholds around `6-7%` often improve Sharpe versus the peer `5%` exit.
+
 ## Regime conditioning
 
 Analyze all distributions conditional on:
