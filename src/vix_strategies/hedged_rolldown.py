@@ -19,6 +19,7 @@ class HedgedRollDownConfig:
     exit_slope: float = 0.05
     vx1_cap: float = 30.0
     stop_loss: float | None = -0.02
+    stop_clip: bool = False
     avoid_roll: bool = True
 
 
@@ -52,6 +53,7 @@ def run_hedged_rolldown(config: HedgedRollDownConfig = HedgedRollDownConfig()) -
     data["raw_ret"] = data["raw_ret"].fillna(0.0)
 
     held = np.zeros(len(data), dtype=int)
+    stop_hit = np.zeros(len(data), dtype=int)
     position = False
 
     for i in range(len(data)):
@@ -67,6 +69,7 @@ def run_hedged_rolldown(config: HedgedRollDownConfig = HedgedRollDownConfig()) -
                 exit_now = True
             if config.stop_loss is not None and data.loc[i, "raw_ret"] <= config.stop_loss:
                 exit_now = True
+                stop_hit[i] = 1
             if exit_now:
                 position = False
 
@@ -80,7 +83,12 @@ def run_hedged_rolldown(config: HedgedRollDownConfig = HedgedRollDownConfig()) -
                 position = True
 
     data["held"] = held
-    data["ret"] = data["raw_ret"] * data["held"]
+    data["stop_hit"] = stop_hit
+    data["unclipped_ret"] = data["raw_ret"] * data["held"]
+    if config.stop_clip and config.stop_loss is not None:
+        data["ret"] = data["unclipped_ret"].clip(lower=config.stop_loss)
+    else:
+        data["ret"] = data["unclipped_ret"]
     data["equity"] = (1.0 + data["ret"]).cumprod()
     data["peak"] = data["equity"].cummax()
     data["drawdown"] = data["equity"] / data["peak"] - 1.0
@@ -95,7 +103,7 @@ def performance_stats(result: pd.DataFrame) -> dict[str, Any]:
     annual_vol = ret.std() * np.sqrt(TRADING_DAYS)
     sharpe = (ret.mean() * TRADING_DAYS) / annual_vol if annual_vol > 0 else np.nan
     entries = int((result["held"].eq(1) & result["held"].shift(1).fillna(0).eq(0)).sum())
-    stops = int(((result["held"] == 1) & (result["raw_ret"] <= -0.02)).sum())
+    stops = int(result.get("stop_hit", pd.Series(dtype=int)).sum())
     return {
         "start_date": result["Date"].iloc[0],
         "end_date": result["Date"].iloc[-1],
@@ -113,7 +121,7 @@ def performance_stats(result: pd.DataFrame) -> dict[str, Any]:
 
 
 def main() -> None:
-    config = HedgedRollDownConfig()
+    config = HedgedRollDownConfig(stop_clip=True)
     result = run_hedged_rolldown(config)
     stats = performance_stats(result)
     for key, value in stats.items():
