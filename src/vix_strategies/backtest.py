@@ -17,6 +17,7 @@ class BacktestConfig:
     signal: str = "m1_m2_pct"
     min_signal: float = 0.03
     max_vix: float | None = 30.0
+    exposure_fraction: float = 0.10
     vol_target: float | None = None
     transaction_cost_bps: float = 0.0
 
@@ -24,18 +25,20 @@ class BacktestConfig:
 def run_hedged_carry_backtest(df: pd.DataFrame, config: BacktestConfig) -> pd.DataFrame:
     data = df[["Trade Date", config.front, config.hedge, config.signal, "VIX Close"]].copy()
     data = data.dropna().sort_values("Trade Date").reset_index(drop=True)
+    data = data[(data[config.front] > 0) & (data[config.hedge] > 0)].reset_index(drop=True)
 
     active = data[config.signal] >= config.min_signal
     if config.max_vix is not None:
         active &= data["VIX Close"] <= config.max_vix
 
     # Signal is known at close t; position applies to close-to-close return from t to t+1.
-    data["position"] = active.astype(float).shift(1).fillna(0.0)
+    data["position"] = active.astype(float).shift(1).fillna(0.0) * config.exposure_fraction
     data["front_return"] = data[config.front].pct_change()
     data["hedge_return"] = data[config.hedge].pct_change()
 
-    # Baseline expression: short front future, long deferred future hedge.
-    data["gross_return"] = data["position"] * (-data["front_return"] + config.hedge_ratio * data["hedge_return"])
+    # Research approximation: short front future, long deferred future hedge.
+    pair_return = -data["front_return"] + config.hedge_ratio * data["hedge_return"]
+    data["gross_return"] = data["position"] * pair_return
     turnover = data["position"].diff().abs().fillna(data["position"].abs())
     data["cost"] = turnover * config.transaction_cost_bps / 10000.0
     data["net_return"] = data["gross_return"] - data["cost"]
