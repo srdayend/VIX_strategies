@@ -29,14 +29,25 @@ src/vix_strategies/
   backtests/      Reusable strategy engines and baseline backtests
   experiments/    Parameter grids, peer reproductions, and one-off comparisons
 
-docs/             Human-written research notes, plans, and conclusions
+docs/
+  00_research_summary.md
+  content_map.md
+  code_execution_guide.md
+  01_data/
+  02_strategy/
+  03_results/
+  04_backlog/
+
 reports/          Generated analysis outputs and result tables
 requirements.txt  Minimal Python dependencies
 ```
 
 Start here:
 
-- [`docs/README.md`](docs/README.md): ordered map of all research notes.
+- [`docs/00_research_summary.md`](docs/00_research_summary.md): current synthesis and working conclusions.
+- [`docs/README.md`](docs/README.md): axis-based document index.
+- [`docs/content_map.md`](docs/content_map.md): audit trail showing where every original doc moved.
+- [`docs/code_execution_guide.md`](docs/code_execution_guide.md): exact code, commands, and output folders for each result note.
 - [`src/vix_strategies/README.md`](src/vix_strategies/README.md): code module guide and execution commands.
 - [`reports/README.md`](reports/README.md): generated-output conventions.
 
@@ -72,12 +83,16 @@ Environment variables can override these paths:
 
 Recommended reading order:
 
-1. [`docs/peer_research_onepage.md`](docs/peer_research_onepage.md) - peer strategy baseline and economic framing.
-2. [`docs/initial_findings.md`](docs/initial_findings.md) - first-pass data facts and naive backtest diagnostic.
-3. [`docs/regime_framework.md`](docs/regime_framework.md) - VIX level, front slope, and VX1/VIX basis regime framework.
-4. [`docs/hedge_ratio_065_vs_080_analysis.md`](docs/hedge_ratio_065_vs_080_analysis.md) - deep dive on `0.65` versus `0.80`.
-5. [`docs/stopclip_parameter_grid_analysis.md`](docs/stopclip_parameter_grid_analysis.md) - entry/exit grid after stop-loss clipping.
-6. [`docs/regime_backtest_grid_analysis.md`](docs/regime_backtest_grid_analysis.md) - regime overlay grid and interpretation.
+1. [`docs/00_research_summary.md`](docs/00_research_summary.md) - synthesis and current research state.
+2. [`docs/code_execution_guide.md`](docs/code_execution_guide.md) - code-to-result map.
+3. [`docs/01_data/source_data_inventory.md`](docs/01_data/source_data_inventory.md) - source workbook inventory.
+4. [`docs/01_data/initial_data_findings.md`](docs/01_data/initial_data_findings.md) - first-pass data findings.
+5. [`docs/02_strategy/peer_research_baseline.md`](docs/02_strategy/peer_research_baseline.md) - peer strategy baseline and economic framing.
+6. [`docs/02_strategy/regime_framework.md`](docs/02_strategy/regime_framework.md) - VIX level, front slope, and VX1/VIX basis framework.
+7. [`docs/03_results/hedge_ratio_065_vs_080.md`](docs/03_results/hedge_ratio_065_vs_080.md) - deep dive on `0.65` versus `0.80`.
+8. [`docs/03_results/stop_loss_parameter_grid.md`](docs/03_results/stop_loss_parameter_grid.md) - entry/exit grid after stop-loss clipping.
+9. [`docs/03_results/regime_overlay_grid.md`](docs/03_results/regime_overlay_grid.md) - regime overlay grid and interpretation.
+10. [`docs/04_backlog/research_backlog.md`](docs/04_backlog/research_backlog.md) - remaining work grouped by research axis.
 
 ## Current Data Snapshot
 

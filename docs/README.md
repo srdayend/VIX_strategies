@@ -1,47 +1,81 @@
-# Research Notes Index
+# Research Notes
 
-This folder contains human-written research notes for the VIX strategies project. The files are best read as a sequence: source-data orientation, baseline research, strategy experiments, then cleanup plans.
+This folder is organized as a research trail. The detailed original notes are grouped by research axis, and navigation files sit at the top level.
+
+No detailed note was intentionally summarized away during this cleanup. Use [`content_map.md`](content_map.md) to see where every original document moved.
+
+## Start Here
+
+- [`00_research_summary.md`](00_research_summary.md) - current synthesis, working conclusions, favorite candidates, and next decisions.
+- [`content_map.md`](content_map.md) - exact old-to-new document map, used to audit that no content was dropped.
+- [`code_execution_guide.md`](code_execution_guide.md) - which code produces or supports each result note.
+
+## Folder Map
+
+```text
+docs/
+  00_research_summary.md
+  content_map.md
+  code_execution_guide.md
+  01_data/        Source data notes and first-pass observations
+  02_strategy/    Strategy framing, peer baseline, and regime framework
+  03_results/     Experiment results and interpretation
+  04_backlog/     Plans, open checks, and next research tasks
+```
 
 ## Recommended Reading Order
 
-### 1. Orientation
+1. [`00_research_summary.md`](00_research_summary.md)
+2. [`code_execution_guide.md`](code_execution_guide.md)
+3. [`01_data/source_data_inventory.md`](01_data/source_data_inventory.md)
+4. [`01_data/initial_data_findings.md`](01_data/initial_data_findings.md)
+5. [`02_strategy/peer_research_baseline.md`](02_strategy/peer_research_baseline.md)
+6. [`02_strategy/regime_framework.md`](02_strategy/regime_framework.md)
+7. [`03_results/hedge_ratio_065_vs_080.md`](03_results/hedge_ratio_065_vs_080.md)
+8. [`03_results/stop_loss_parameter_grid.md`](03_results/stop_loss_parameter_grid.md)
+9. [`03_results/regime_overlay_grid.md`](03_results/regime_overlay_grid.md)
+10. [`04_backlog/research_backlog.md`](04_backlog/research_backlog.md)
 
-- [`data_sources.md`](data_sources.md) - source workbook inventory and path assumptions.
-- [`initial_findings.md`](initial_findings.md) - first data pass, coverage facts, and a naive baseline diagnostic.
-- [`analysis_plan.md`](analysis_plan.md) - data-analysis agenda and open checks.
-- [`backtesting_plan.md`](backtesting_plan.md) - backtest agenda and realism gaps.
+## Axis-Based Index
 
-### 2. External Baseline
+### Data
 
-- [`peer_research_onepage.md`](peer_research_onepage.md) - summary of the peer research package, including the baseline hedged roll-down rules.
-- [`peer_strategy_crosscheck_080.md`](peer_strategy_crosscheck_080.md) - cross-check focused on the `0.80VX1 - VX2` variant.
+- [`01_data/source_data_inventory.md`](01_data/source_data_inventory.md)
+- [`01_data/initial_data_findings.md`](01_data/initial_data_findings.md)
 
-### 3. Strategy Framework
+### Strategy Framing
 
-- [`regime_framework.md`](regime_framework.md) - VIX level, front slope, and VX1/VIX basis regime framework.
-- [`hedge_ratio_065_vs_080_analysis.md`](hedge_ratio_065_vs_080_analysis.md) - explanation of why `0.65` is the economic anchor and `0.80` is the empirical benchmark.
+- [`02_strategy/peer_research_baseline.md`](02_strategy/peer_research_baseline.md)
+- [`02_strategy/peer_080_crosscheck.md`](02_strategy/peer_080_crosscheck.md)
+- [`02_strategy/regime_framework.md`](02_strategy/regime_framework.md)
 
-### 4. Parameter And Regime Experiments
+### Experiment Results
 
-- [`stopclip_parameter_grid_analysis.md`](stopclip_parameter_grid_analysis.md) - entry/exit parameter grid after stop-loss clipping.
-- [`regime_backtest_grid_analysis.md`](regime_backtest_grid_analysis.md) - regime overlay results for `0.65` and `0.80` strategy variants.
+- [`03_results/hedge_ratio_065_vs_080.md`](03_results/hedge_ratio_065_vs_080.md)
+- [`03_results/stop_loss_parameter_grid.md`](03_results/stop_loss_parameter_grid.md)
+- [`03_results/regime_overlay_grid.md`](03_results/regime_overlay_grid.md)
 
-## Working Conclusions
+### Backlog And Plans
 
-Current working interpretation:
+- [`04_backlog/data_analysis_plan.md`](04_backlog/data_analysis_plan.md)
+- [`04_backlog/strategy_backtesting_plan.md`](04_backlog/strategy_backtesting_plan.md)
+- [`04_backlog/research_backlog.md`](04_backlog/research_backlog.md)
 
-- The peer package gives a strong baseline for `r * VX1 - VX2` hedged roll-down carry.
-- The `0.65` hedge ratio is defensible because it is tied to VX2/VX1 spike-day behavior.
-- The `0.80` hedge ratio performs better in the current rank-based tests, but it has more front-volatility character.
-- VIX-level and slope regime overlays add limited incremental value once the base entry/exit rules are active.
-- VX1/VIX basis is the most promising additional quality filter.
-- The most important next robustness step is contract-level testing with explicit roll and cost assumptions.
+## Current Working Conclusions
+
+- `0.65VX1 - VX2` is the economic hedge-ratio anchor because it is tied to spike-day `dVX2/dVX1` behavior.
+- `0.80VX1 - VX2` is the empirical high-Sharpe benchmark and deserves to stay in the candidate set.
+- Stop-loss modeling materially changes the strategy profile; close-only and stop-clipped results should never be mixed without disclosure.
+- VIX-level and slope overlays add little after the base rules are active.
+- `VX1/VIX` basis is the most useful additional quality filter, especially for the `0.80` variant.
+- The next robustness step is contract-level testing with explicit roll, cost, liquidity, and stop-slippage assumptions.
 
 ## Maintenance Rules
 
 When adding a new note:
 
-1. Add it to this index.
-2. State whether it is a plan, result, or interpretation note.
-3. Link any generated CSV/table output under `reports/generated/`.
-4. Keep final conclusions near the top of the note, with raw tables below.
+1. Put it in the right folder by research axis.
+2. Add it to this README if it changes the research trail.
+3. Add old-to-new movement details to `content_map.md` if a file is renamed or moved.
+4. Add exact code and command details to `code_execution_guide.md` if it is a result note.
+5. Start result notes with the conclusion and assumptions, but keep detailed tables and reasoning intact.
