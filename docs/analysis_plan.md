@@ -59,6 +59,19 @@ Test `0.65` and `0.80` across entry/exit thresholds after changing the stop assu
 
 Initial read-through: stop clipping materially improves both ratios; `0.80` still dominates the top Sharpe region; exit thresholds around `6-7%` often improve Sharpe versus the peer `5%` exit.
 
+## Regime backtest grid
+
+Primary grid document: [`regime_backtest_grid_analysis.md`](regime_backtest_grid_analysis.md)
+
+Test whether VIX-level, slope, and front-basis overlays improve `0.65` and `0.80` strategies after the stop-clipped threshold work:
+
+- Ratios: `0.65`, `0.80`
+- Baselines: entry `8%` / exit `5%`, and entry `8%` / exit `7%`
+- Regime actions: block entry, force exit, or scale exposure to half
+- Regime signals: VIX level, front slope, `VX1/VIX - 1` basis, and combinations
+
+Initial read-through: VIX-level and slope overlays add little because the base rules already handle them. The useful incremental regime dimension is high `VX1/VIX` basis, especially for the `0.80` strategy.
+
 ## Regime conditioning
 
 Analyze all distributions conditional on:
