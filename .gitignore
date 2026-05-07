@@ -6,9 +6,8 @@ venv/
 .ipynb_checkpoints/
 .DS_Store
 
-# Local data and generated outputs
+# Local data
 data/raw/
 data/processed/
-reports/generated/
 *.parquet
 *.feather

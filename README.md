@@ -1,106 +1,97 @@
 # VIX Strategies Research Lab
 
-Research workspace for VIX futures term-structure analysis and hedged roll-down carry strategies.
+Research workspace for VIX futures calendar-spread strategies.
 
-The repository uses local Excel workbooks as source data. It is a research lab, not yet a production trading system: the goal is to keep the data, assumptions, experiments, and conclusions easy to audit.
-
-## Current Thesis
-
-The working strategy family is a hedged VIX futures roll-down carry trade:
+The project studies a hedged VIX futures roll-down trade:
 
 ```text
-Position = r * VX1 - VX2
+Position = r * VX1 - 1.00 * VX2
 front_slope = ln(VX2 / VX1)
 ```
 
-Core research view:
+The core idea is to short the deferred VIX future (`VX2`) to harvest roll-down carry, while buying the front future (`VX1`) to hedge volatility spikes. The main research question is how much VX1 should be held against one unit of short VX2.
 
-- `0.65VX1 - VX2` is the economically anchored hedge-ratio baseline, based on observed VX2/VX1 shock beta.
-- `0.80VX1 - VX2` is the empirical high-Sharpe benchmark in the current rank-based tests.
-- VX1/VIX basis is the main candidate filter for improving strategy quality, especially for higher hedge ratios.
-- Contract-level testing, realistic costs, and stop-loss modeling are the next major robustness checks.
+## Current View
+
+- VIX spot has a low-base, right-tail spike structure.
+- VIX futures are usually in contango, especially at the front of the curve.
+- A simple `1.00VX1 - 1.00VX2` spread is not the cleanest baseline because it buys more VX1 than the observed median spike hedge requires.
+- The economic anchor is around `0.65VX1 - VX2`, based on spike-day `dVX2 / dVX1`.
+- The more rigorous realized-PnL sizing points to `0.70VX1 - VX2` as the cleaner baseline.
+- `0.80VX1 - VX2` is a stronger spike-hedge / high-Sharpe candidate, but it is more front-volatility tilted.
+- The next major robustness steps are basis-aware ratio rules, contract-level testing, transaction costs, and stop-slippage assumptions.
+
+## Best Reading Path
+
+For a quick handoff, read these in order:
+
+1. [`docs/00_research_summary.md`](docs/00_research_summary.md) - current synthesis and conclusions.
+2. [`docs/03_results/vix_distribution_rolldown_hedge_ratio.md`](docs/03_results/vix_distribution_rolldown_hedge_ratio.md) - baseline weight study and latest sizing logic.
+3. [`docs/03_results/hedge_ratio_065_vs_080.md`](docs/03_results/hedge_ratio_065_vs_080.md) - why `0.65` and `0.80` behave differently.
+4. [`docs/03_results/stop_loss_parameter_grid.md`](docs/03_results/stop_loss_parameter_grid.md) - entry/exit and stop-loss sensitivity.
+5. [`docs/03_results/regime_overlay_grid.md`](docs/03_results/regime_overlay_grid.md) - VIX, slope, and basis regime overlays.
+
+The full document index is in [`docs/README.md`](docs/README.md).
 
 ## Repository Map
 
 ```text
-src/vix_strategies/
-  data/           Source path resolution and Excel workbook loaders
-  analysis/       Data summaries and diagnostics
-  backtests/      Reusable strategy engines and baseline backtests
-  experiments/    Parameter grids, peer reproductions, and one-off comparisons
-
 docs/
-  00_research_summary.md
-  content_map.md
-  code_execution_guide.md
-  01_data/
-  02_strategy/
-  03_results/
-  04_backlog/
+  00_research_summary.md       Current synthesis
+  01_data/                     Source data notes and first-pass findings
+  02_strategy/                 Strategy framing and peer research baseline
+  03_results/                  Main result notes and interpretation
+  04_backlog/                  Open research tasks
+  code_execution_guide.md      Code-to-result map
 
-reports/          Generated analysis outputs and result tables
-requirements.txt  Minimal Python dependencies
+src/vix_strategies/
+  data/                        Excel loaders and source path resolution
+  analysis/                    Data diagnostics and baseline weight study
+  backtests/                   Reusable strategy engines
+  experiments/                 Parameter grids and peer reproduction scripts
+
+reports/generated/             Reproducible CSV and chart outputs
 ```
-
-Start here:
-
-- [`docs/00_research_summary.md`](docs/00_research_summary.md): current synthesis and working conclusions.
-- [`docs/README.md`](docs/README.md): axis-based document index.
-- [`docs/content_map.md`](docs/content_map.md): audit trail showing where every original doc moved.
-- [`docs/code_execution_guide.md`](docs/code_execution_guide.md): exact code, commands, and output folders for each result note.
-- [`src/vix_strategies/README.md`](src/vix_strategies/README.md): code module guide and execution commands.
-- [`reports/README.md`](reports/README.md): generated-output conventions.
-
-## Quick Start
-
-Install dependencies in a Python environment with `pandas`, `numpy`, and `openpyxl`, then run from the repository root:
-
-```bash
-python -m src.vix_strategies.analysis.summarize_term_structure
-python -m src.vix_strategies.backtests.hedged_vx1_vx2_rolldown
-python -m src.vix_strategies.experiments.stop_loss_parameter_grid
-python -m src.vix_strategies.experiments.compare_065_vs_080_hedge_ratios
-python -m src.vix_strategies.experiments.regime_overlay_grid
-```
-
-Generated CSV outputs should be written under `reports/generated/`.
 
 ## Source Data
 
-Default local paths:
+The repository does not store the Excel source workbooks. By default, the code expects:
 
-- `C:\Users\user\Downloads\VIX_futures_term_structure.xlsx`
-- `C:\Users\user\Downloads\VIX_futures_by_maturity (1).xlsx`
-- `C:\Users\user\OneDrive\바탕 화면\outputs\vix_cboe\CBOE_VIX_Index_Daily_OHLC.xlsx`
+```text
+C:\Users\user\Downloads\VIX_futures_term_structure.xlsx
+C:\Users\user\Downloads\VIX_futures_by_maturity (1).xlsx
+C:\Users\user\OneDrive\바탕 화면\outputs\vix_cboe\CBOE_VIX_Index_Daily_OHLC.xlsx
+```
 
-Environment variables can override these paths:
+Override paths with:
 
-- `VIX_TERM_STRUCTURE_PATH`
-- `VIX_FUTURES_BY_MATURITY_PATH`
-- `VIX_INDEX_PATH`
+```text
+VIX_TERM_STRUCTURE_PATH
+VIX_FUTURES_BY_MATURITY_PATH
+VIX_INDEX_PATH
+```
 
-## Research Notes
+## Quick Start
 
-Recommended reading order:
+Install dependencies:
 
-1. [`docs/00_research_summary.md`](docs/00_research_summary.md) - synthesis and current research state.
-2. [`docs/code_execution_guide.md`](docs/code_execution_guide.md) - code-to-result map.
-3. [`docs/01_data/source_data_inventory.md`](docs/01_data/source_data_inventory.md) - source workbook inventory.
-4. [`docs/01_data/initial_data_findings.md`](docs/01_data/initial_data_findings.md) - first-pass data findings.
-5. [`docs/02_strategy/peer_research_baseline.md`](docs/02_strategy/peer_research_baseline.md) - peer strategy baseline and economic framing.
-6. [`docs/02_strategy/regime_framework.md`](docs/02_strategy/regime_framework.md) - VIX level, front slope, and VX1/VIX basis framework.
-7. [`docs/03_results/hedge_ratio_065_vs_080.md`](docs/03_results/hedge_ratio_065_vs_080.md) - deep dive on `0.65` versus `0.80`.
-8. [`docs/03_results/stop_loss_parameter_grid.md`](docs/03_results/stop_loss_parameter_grid.md) - entry/exit grid after stop-loss clipping.
-9. [`docs/03_results/regime_overlay_grid.md`](docs/03_results/regime_overlay_grid.md) - regime overlay grid and interpretation.
-10. [`docs/04_backlog/research_backlog.md`](docs/04_backlog/research_backlog.md) - remaining work grouped by research axis.
+```bash
+pip install -r requirements.txt
+```
 
-## Current Data Snapshot
+Run the latest baseline weight study:
 
-The latest documented first pass used source data with:
+```bash
+python -m src.vix_strategies.analysis.vix_distribution_rolldown_hedge_ratio
+```
 
-- VIX futures term structure coverage: `2004-03-26` to `2026-05-01`
-- Term structure rows: `5,578`
-- Complete 9-maturity curves: `3,578` rows, about `64.1%`
-- VIX index coverage: `1990-01-02` to `2026-05-05`
-- M2 > M1 contango days: about `79.0%`
-- M2 < M1 backwardation days: about `15.9%`
+Run the main strategy experiments:
+
+```bash
+python -m src.vix_strategies.experiments.reproduce_peer_research
+python -m src.vix_strategies.experiments.compare_065_vs_080_hedge_ratios
+python -m src.vix_strategies.experiments.stop_loss_parameter_grid
+python -m src.vix_strategies.experiments.regime_overlay_grid
+```
+
+Generated outputs are written under `reports/generated/`.
