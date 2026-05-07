@@ -1,29 +1,61 @@
 # Reports
 
-Generated analysis outputs, charts, and backtest result summaries should live here.
+This folder contains generated outputs from scripts in `src/vix_strategies/`.
 
-Use `reports/generated/` for machine-created files so source documents and generated artifacts stay separate.
+Handwritten interpretation belongs in `docs/`. Generated CSVs and charts belong under `reports/generated/<experiment_name>/`.
 
-## Expected Layout
+## Current Output Folders
 
 ```text
 reports/generated/
-  compare_065_vs_080_hedge_ratios/
-  stop_loss_parameter_grid/
-  regime_overlay_grid/
   reproduce_peer_research/
+  vix_distribution_rolldown_hedge_ratio/
 ```
 
-## Rules
+Some scripts listed in `docs/code_execution_guide.md` generate additional folders when run:
 
-- Do not put handwritten research notes in this folder. Use `docs/` for interpretation and conclusions.
-- Keep generated CSVs, pivots, and tables under an experiment-specific subfolder.
-- When a generated result becomes important, summarize the conclusion in `docs/` and link back to the generated files.
-- Treat generated files as reproducible outputs from scripts in `src/vix_strategies/`.
+```text
+compare_065_vs_080_hedge_ratios/
+stop_loss_parameter_grid/
+regime_overlay_grid/
+```
 
-## Current Generators
+## Primary Generated Outputs
 
-- `python -m src.vix_strategies.experiments.compare_065_vs_080_hedge_ratios`
-- `python -m src.vix_strategies.experiments.stop_loss_parameter_grid`
-- `python -m src.vix_strategies.experiments.regime_overlay_grid`
-- `python -m src.vix_strategies.experiments.reproduce_peer_research`
+For the latest baseline weight study, the script generates CSVs and charts under:
+
+```text
+reports/generated/vix_distribution_rolldown_hedge_ratio/
+```
+
+The most useful CSV outputs are:
+
+```text
+  vix_spot_distribution_stats.csv
+  vix_spot_percentile_curve.csv
+  term_structure_contango_backwardation_summary.csv
+  adjacent_maturity_rolldown_summary.csv
+  front_carry_by_hedge_ratio.csv
+  vix_spike_hedge_ratio_summary.csv
+  advanced_pnl_weight_grid.csv
+  advanced_pnl_weight_summary.csv
+```
+
+The script also writes local chart PNGs:
+
+```text
+  vix_spot_percentile_curve.png
+  term_structure_slope_profile.png
+  term_structure_contango_heatmap.png
+  adjacent_maturity_average_rolldown.png
+  front_carry_by_hedge_ratio_curve.png
+  vix_spike_vx2_vx1_hedge_ratio.png
+  advanced_pnl_weight_grid_returns.png
+  advanced_spike_pnl_by_weight.png
+```
+
+The CSV files preserve the underlying numbers used in the docs. The PNG files are reproducible local artifacts from the script.
+
+## Reproducibility Rule
+
+Generated files are reproducible outputs. If a generated result becomes important, summarize it in `docs/` and link back to the relevant files rather than editing generated CSVs manually.

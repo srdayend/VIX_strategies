@@ -10,11 +10,13 @@ The package is split by responsibility so file names describe the work they do b
 ## `analysis/`
 
 - `summarize_term_structure.py` summarizes coverage, settlement distributions, slope distributions, and VIX regimes.
+- `vix_distribution_rolldown_hedge_ratio.py` produces the baseline calendar-spread weight study, including VIX spot distribution, term-structure diagnostics, roll-down premia, spike hedge ratios, and realized PnL-based `r` sizing.
 
 Run:
 
 ```bash
 python -m src.vix_strategies.analysis.summarize_term_structure
+python -m src.vix_strategies.analysis.vix_distribution_rolldown_hedge_ratio
 ```
 
 ## `backtests/`
