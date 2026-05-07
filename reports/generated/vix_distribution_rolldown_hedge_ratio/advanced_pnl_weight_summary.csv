@@ -1,0 +1,7 @@
+method,r
+spike95_median_neutral_min_r,0.7
+spike95_p25_neutral_min_r,0.8
+spike975_median_neutral_min_r,0.7
+spike99_median_neutral_min_r,0.675
+carry_mean_positive_max_r,1.325
+carry_median_positive_max_r,0.75
