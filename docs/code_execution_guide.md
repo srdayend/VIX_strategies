@@ -49,6 +49,7 @@ Related docs:
 | Result note | Code | Command | Output directory |
 |---|---|---|---|
 | [`03_results/hedge_ratio_065_vs_080.md`](03_results/hedge_ratio_065_vs_080.md) | `src/vix_strategies/experiments/compare_065_vs_080_hedge_ratios.py` | `python -m src.vix_strategies.experiments.compare_065_vs_080_hedge_ratios` | `reports/generated/compare_065_vs_080_hedge_ratios/` |
+| [`03_results/vix_distribution_rolldown_hedge_ratio.md`](03_results/vix_distribution_rolldown_hedge_ratio.md) | `src/vix_strategies/analysis/vix_distribution_rolldown_hedge_ratio.py` | `python -m src.vix_strategies.analysis.vix_distribution_rolldown_hedge_ratio` | `reports/generated/vix_distribution_rolldown_hedge_ratio/` |
 | [`03_results/stop_loss_parameter_grid.md`](03_results/stop_loss_parameter_grid.md) | `src/vix_strategies/experiments/stop_loss_parameter_grid.py` | `python -m src.vix_strategies.experiments.stop_loss_parameter_grid` | `reports/generated/stop_loss_parameter_grid/` |
 | [`03_results/regime_overlay_grid.md`](03_results/regime_overlay_grid.md) | `src/vix_strategies/experiments/regime_overlay_grid.py` | `python -m src.vix_strategies.experiments.regime_overlay_grid` | `reports/generated/regime_overlay_grid/` |
 | [`02_strategy/peer_research_baseline.md`](02_strategy/peer_research_baseline.md) and [`02_strategy/peer_080_crosscheck.md`](02_strategy/peer_080_crosscheck.md) | `src/vix_strategies/experiments/reproduce_peer_research.py` | `python -m src.vix_strategies.experiments.reproduce_peer_research` | `reports/generated/reproduce_peer_research/` |
@@ -70,6 +71,40 @@ reports/generated/compare_065_vs_080_hedge_ratios/
   regime_summary.csv
   basis_summary.csv
   held_day_quantiles.csv
+```
+
+### `vix_distribution_rolldown_hedge_ratio.py`
+
+Purpose:
+
+- Compare historical and latest 3-year VIX spot distributions.
+- Summarize VIX spot spike structure and VIX futures contango/backwardation.
+- Estimate `M1->VIX` roll-down cost, adjacent futures roll-down, and net front carry by VX1 hedge ratio.
+- Recalculate the VX1 hedge ratio needed against a short VX2 leg on VIX spot spike days.
+- Add realized PnL-based weight sizing for carry-regime and spike-day trade-offs.
+
+Generated files:
+
+```text
+reports/generated/vix_distribution_rolldown_hedge_ratio/
+  vix_spot_distribution_stats.csv
+  vix_spot_bucket_distribution.csv
+  vix_spot_percentile_curve.csv
+  vix_spike_structure_summary.csv
+  term_structure_contango_backwardation_summary.csv
+  adjacent_maturity_rolldown_summary.csv
+  front_carry_by_hedge_ratio.csv
+  vix_spike_hedge_ratio_summary.csv
+  advanced_pnl_weight_grid.csv
+  advanced_pnl_weight_summary.csv
+  vix_spot_percentile_curve.png
+  adjacent_maturity_average_rolldown.png
+  front_carry_by_hedge_ratio_curve.png
+  term_structure_slope_profile.png
+  term_structure_contango_heatmap.png
+  vix_spike_vx2_vx1_hedge_ratio.png
+  advanced_pnl_weight_grid_returns.png
+  advanced_spike_pnl_by_weight.png
 ```
 
 ### `stop_loss_parameter_grid.py`
