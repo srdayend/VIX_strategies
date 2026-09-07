@@ -10,7 +10,7 @@ from ..data.excel_loaders import SETTLE_COLUMNS, build_analysis_frame, load_vix_
 
 
 OUTPUT_DIR = Path("reports/generated/vix_distribution_rolldown_hedge_ratio")
-FONT_PATH = Path("C:/Windows/Fonts/NanumSquareR.ttf")
+FONT_PATH = Path.home() / "Library" / "Fonts" / "NanumSquareR.ttf"
 
 
 def _font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
@@ -85,7 +85,9 @@ def _save_simple_bar(data: pd.DataFrame, path: Path, title: str, x_col: str, y_c
     draw.line((ml, yp(0), ml + pw, yp(0)), fill=(70, 76, 84), width=2)
     group_w = pw / len(data)
     bar_w = group_w * 0.55
-    for i, row in data.reset_index(drop=True).iterrows():
+    reset = data.reset_index(drop=True)
+    for i in range(len(reset)):
+        row = reset.iloc[i]
         x0 = ml + i * group_w + (group_w - bar_w) / 2
         x1 = x0 + bar_w
         y0, y1 = yp(max(float(row[y_col]), 0)), yp(min(float(row[y_col]), 0))
@@ -127,7 +129,7 @@ def _vix_distribution(vix: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd
     })
     pct_points = [1, 5, 10, 25, 50, 75, 90, 95, 99]
     pct = pd.DataFrame({"percentile": pct_points, "vix_close": [s["Close"].quantile(p / 100) for p in pct_points]})
-    dvix = s["Close"].diff()
+    dvix = s["Close"].diff().astype(float)
     spike = pd.DataFrame([
         {"metric": "VIX close", "days": len(s), "median": s["Close"].median(), "mean": s["Close"].mean(), "p75": s["Close"].quantile(.75), "p90": s["Close"].quantile(.90), "p95": s["Close"].quantile(.95), "p99": s["Close"].quantile(.99), "max": s["Close"].max(), "key_share_1": (s["Close"] < 20).mean(), "key_share_2": (s["Close"] >= 40).mean()},
         {"metric": "Daily VIX change", "days": int(dvix.notna().sum()), "median": dvix.median(), "mean": dvix.mean(), "p75": dvix.quantile(.75), "p90": dvix.quantile(.90), "p95": dvix.quantile(.95), "p99": dvix.quantile(.99), "max": dvix.max(), "key_share_1": (dvix >= 3).mean(), "key_share_2": (dvix >= 5).mean()},
@@ -140,7 +142,8 @@ def _term_structure(df: pd.DataFrame) -> pd.DataFrame:
     for far in [2, 3, 4, 6, 9]:
         sub = df[["M1 Settle", f"M{far} Settle"]].dropna()
         ratio = sub[f"M{far} Settle"] / sub["M1 Settle"]
-        rows.append({"curve_measure": f"M{far}/M1", "days": len(sub), "contango_rate": (ratio > 1).mean(), "backwardation_rate": (ratio < 1).mean(), "mean_pct_slope": (ratio - 1).mean(), "median_pct_slope": (ratio - 1).median(), "mean_log_slope": np.log(ratio).mean(), "median_log_slope": np.log(ratio).median()})
+        log_ratio = np.log(ratio.to_numpy())
+        rows.append({"curve_measure": f"M{far}/M1", "days": len(sub), "contango_rate": (ratio > 1).mean(), "backwardation_rate": (ratio < 1).mean(), "mean_pct_slope": (ratio - 1).mean(), "median_pct_slope": (ratio - 1).median(), "mean_log_slope": float(np.mean(log_ratio)), "median_log_slope": float(np.median(log_ratio))})
     complete = df[SETTLE_COLUMNS].dropna()
     adj = complete[[f"M{i + 1} Settle" for i in range(1, 9)]].to_numpy() / complete[[f"M{i} Settle" for i in range(1, 9)]].to_numpy()
     rows.append({"curve_measure": "All adjacent M1-M9", "days": len(complete), "contango_rate": (adj > 1).all(axis=1).mean(), "backwardation_rate": (adj < 1).all(axis=1).mean(), "mean_pct_slope": np.nan, "median_pct_slope": np.nan, "mean_log_slope": np.nan, "median_log_slope": np.nan})
