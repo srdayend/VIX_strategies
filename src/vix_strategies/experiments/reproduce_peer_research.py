@@ -45,10 +45,7 @@ def _term_frame_with_vx3() -> pd.DataFrame:
 
 def _shock_beta_rows() -> pd.DataFrame:
     data = _term_frame_with_vx3()[["Date", "VX1", "VX2", "VX3"]].copy()
-    data["dVX1"] = data["VX1"].diff()
-    data["dVX2"] = data["VX2"].diff()
-    data["dVX3"] = data["VX3"].diff()
-    data = data.dropna()
+    data = data.assign(dVX1=data["VX1"].diff(), dVX2=data["VX2"].diff(), dVX3=data["VX3"].diff()).dropna()
     rows = []
     for quantile in [0.95, 0.975, 0.99, 0.995]:
         cutoff = data["dVX1"].quantile(quantile)
