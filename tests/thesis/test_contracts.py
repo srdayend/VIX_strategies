@@ -40,6 +40,16 @@ def test_monthly_vx_settlement_date_moves_to_previous_business_day_for_holiday()
     assert settlement == date(2026, 3, 17)
 
 
+def test_monthly_vx_settlement_date_moves_when_following_third_friday_is_holiday():
+    settlement = compute_monthly_vx_settlement_date(
+        2014,
+        3,
+        holidays={date(2014, 4, 18)},
+    )
+
+    assert settlement == date(2014, 3, 18)
+
+
 def test_official_settlement_date_overrides_rule_derived_date():
     record = ContractRecord.from_monthly_vx(
         contract_id="VXH26",
@@ -74,3 +84,15 @@ def test_calendar_dte_uses_calendar_days_across_weekends():
 def test_calendar_dte_rejects_expired_contract_dates():
     with pytest.raises(ValueError, match="settlement_date precedes trade_date"):
         compute_calendar_dte(date(2026, 3, 19), date(2026, 3, 18))
+
+
+def test_contract_record_rejects_weekly_listing_type_in_g2a_monthly_schema():
+    with pytest.raises(ValueError, match="listing_type must be 'monthly'"):
+        ContractRecord(
+            contract_id="VXH26",
+            trade_date=date(2026, 3, 13),
+            settlement_date=date(2026, 3, 18),
+            settlement_price=18.25,
+            settlement_date_source="official",
+            listing_type="weekly",
+        )

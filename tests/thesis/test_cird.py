@@ -28,6 +28,36 @@ def test_deferred_short_roll_down_is_positive_carry_under_simple_contango():
     assert -deferred_rd == pytest.approx(0.2)
 
 
+def test_roll_down_rejects_current_dte_not_represented_by_local_curve():
+    curve = build_local_curve(
+        vix_level=15.0,
+        futures_points=[CurvePoint(dte=10.0, price=17.0), CurvePoint(dte=40.0, price=23.0)],
+    )
+
+    with pytest.raises(ValueError, match="current_dte outside local curve bounds"):
+        compute_contract_roll_down(
+            current_price=24.0,
+            current_dte=50.0,
+            next_dte=39.0,
+            curve=curve,
+        )
+
+
+def test_roll_down_rejects_current_price_inconsistent_with_same_day_curve():
+    curve = build_local_curve(
+        vix_level=15.0,
+        futures_points=[CurvePoint(dte=10.0, price=17.0), CurvePoint(dte=40.0, price=23.0)],
+    )
+
+    with pytest.raises(ValueError, match="current_price must match"):
+        compute_contract_roll_down(
+            current_price=22.0,
+            current_dte=40.0,
+            next_dte=39.0,
+            curve=curve,
+        )
+
+
 def test_front_long_roll_down_is_hedge_carry_cost_under_simple_contango():
     curve = build_local_curve(
         vix_level=15.0,
@@ -49,6 +79,11 @@ def test_front_long_roll_down_is_hedge_carry_cost_under_simple_contango():
 
     assert front_rd == pytest.approx(-0.2)
     assert compute_spread_cird(front_rd, deferred_rd, hedge_ratio=0.5) == pytest.approx(0.1)
+
+
+def test_spread_cird_rejects_negative_hedge_ratio():
+    with pytest.raises(ValueError, match="hedge_ratio must be non-negative"):
+        compute_spread_cird(front_rd=-0.2, deferred_rd=-0.2, hedge_ratio=-0.5)
 
 
 def test_roll_down_uses_friday_to_monday_calendar_aging():

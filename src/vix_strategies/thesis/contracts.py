@@ -27,19 +27,24 @@ def compute_monthly_vx_settlement_date(
     """
     following_year = year + (1 if month == 12 else 0)
     following_month = 1 if month == 12 else month + 1
-    third_friday = _nth_weekday_of_month(
-        following_year,
-        following_month,
-        calendar.FRIDAY,
-        3,
+    holiday_set: Set[date] = set(holidays or ())
+    third_friday = _previous_business_day_if_needed(
+        _nth_weekday_of_month(
+            following_year,
+            following_month,
+            calendar.FRIDAY,
+            3,
+        ),
+        holiday_set,
     )
     settlement = third_friday - timedelta(days=30)
-    holiday_set: Set[date] = set(holidays or ())
+    return _previous_business_day_if_needed(settlement, holiday_set)
 
-    while settlement.weekday() >= 5 or settlement in holiday_set:
-        settlement -= timedelta(days=1)
 
-    return settlement
+def _previous_business_day_if_needed(day: date, holidays: Set[date]) -> date:
+    while day.weekday() >= 5 or day in holidays:
+        day -= timedelta(days=1)
+    return day
 
 
 @dataclass(frozen=True)
@@ -48,8 +53,9 @@ class ContractRecord:
     trade_date: date
     settlement_date: date
     settlement_price: float
+    settlement_date_source: str
     rank_label: Optional[str] = None
-    settlement_date_source: str = "official"
+    listing_type: str = "monthly"
 
     def __post_init__(self) -> None:
         if not self.contract_id:
@@ -58,6 +64,8 @@ class ContractRecord:
             raise ValueError("settlement_price must be positive")
         if self.settlement_date_source not in {"official", "derived"}:
             raise ValueError("settlement_date_source must be 'official' or 'derived'")
+        if self.listing_type != "monthly":
+            raise ValueError("listing_type must be 'monthly'")
         compute_calendar_dte(self.trade_date, self.settlement_date)
 
     @property
@@ -93,8 +101,9 @@ class ContractRecord:
             trade_date=trade_date,
             settlement_date=settlement_date,
             settlement_price=settlement_price,
-            rank_label=rank_label,
             settlement_date_source=settlement_date_source,
+            rank_label=rank_label,
+            listing_type="monthly",
         )
 
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import isfinite
+from math import isclose, isfinite
 
 from vix_strategies.thesis.curve import LocalCurve, curve_price_at_dte
 
@@ -21,6 +21,12 @@ def compute_contract_roll_down(
     curve: LocalCurve,
 ) -> float:
     _validate_interval(current_price, current_dte, next_dte)
+    try:
+        curve_current_price = curve_price_at_dte(curve, current_dte)
+    except ValueError as exc:
+        raise ValueError("current_dte outside local curve bounds") from exc
+    if not isclose(current_price, curve_current_price, rel_tol=1e-12, abs_tol=1e-12):
+        raise ValueError("current_price must match same-day curve price at current_dte")
     return curve_price_at_dte(curve, next_dte) - current_price
 
 
@@ -57,6 +63,8 @@ def compute_spread_cird(front_rd: float, deferred_rd: float, hedge_ratio: float)
     ]:
         if not isfinite(value):
             raise ValueError(f"{name} must be finite")
+    if hedge_ratio < 0:
+        raise ValueError("hedge_ratio must be non-negative")
     return hedge_ratio * front_rd - deferred_rd
 
 

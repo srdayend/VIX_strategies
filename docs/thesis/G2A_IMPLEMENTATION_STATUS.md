@@ -34,11 +34,15 @@ Implemented APIs:
   `ContractRecord` or `ContractRecord.from_monthly_vx`.
 - Rule-derived monthly settlement dates are marked with
   `settlement_date_source="derived"` and are not treated as authoritative.
+- The monthly schema is explicit: G2-A accepts monthly contracts and rejects
+  weekly listing types.
 - Calendar DTE is computed as `(settlement_date - trade_date).days`, so a
   Friday-to-Monday interval ages by three calendar days.
 - The primary local curve is price-linear over calendar DTE and anchors VIX
   at tau 0.
 - Contract roll-down is `Fhat_t(next_dte) - current_price`.
+- Contract roll-down validates that the current DTE is on the local curve and
+  that the current settlement price matches the curve at that DTE.
 - Realized decomposition is exact by construction:
   `next_price - current_price = roll_down + repricing`.
 - Holding P&L is keyed by actual contract ID. Rank-only labels such as `M1`
@@ -48,8 +52,9 @@ Implemented APIs:
 
 - The rule-derived monthly VX date uses the approved rule:
   third Friday of the following month minus 30 calendar days.
-- If the rule-derived nominal date falls on an explicitly supplied holiday
-  or weekend, it is adjusted backward to the prior non-holiday weekday.
+- If the rule-derived settlement Wednesday or the Friday 30 days after that
+  Wednesday falls on an explicitly supplied Cboe Options holiday, settlement
+  is adjusted backward to the prior non-holiday weekday.
 - Local curve interpolation does not extrapolate beyond the VIX anchor and
   farthest provided futures DTE.
 - Futures DTE anchors must be positive, strictly increasing, and price-positive.
@@ -67,13 +72,13 @@ Implemented APIs:
   - GREEN: 1 passed.
 - `python -m pytest tests/thesis/test_contracts.py -v`
   - RED: `ModuleNotFoundError: No module named 'vix_strategies.thesis.contracts'`.
-  - GREEN: 7 passed.
+  - GREEN: 9 passed.
 - `python -m pytest tests/thesis/test_curve.py -v`
   - RED: `ModuleNotFoundError: No module named 'vix_strategies.thesis.curve'`.
   - GREEN: 6 passed.
 - `python -m pytest tests/thesis/test_cird.py -v`
   - RED: `ModuleNotFoundError: No module named 'vix_strategies.thesis.cird'`.
-  - GREEN: 4 passed.
+  - GREEN: 7 passed.
 - `python -m pytest tests/thesis/test_positions.py -v`
   - RED: `ModuleNotFoundError: No module named 'vix_strategies.thesis.positions'`.
   - GREEN: 3 passed.
@@ -81,7 +86,7 @@ Implemented APIs:
   - RED: package-level thesis exports were not wired.
   - GREEN: 1 passed.
 - Current full test command: `python -m pytest -v`
-  - Result: 22 passed in 0.61s.
+  - Result: 27 passed in 0.62s.
 
 ## Scope Checks
 
