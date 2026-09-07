@@ -20,6 +20,10 @@ class HedgedRollDownConfig:
     vx1_cap: float = 30.0
     stop_loss: float | None = -0.02
     stop_clip: bool = False
+    # Slippage modeled as the stop firing at `stop_loss` but executing at
+    # `stop_loss - stop_slippage` (more negative). Only matters when stop_clip=True.
+    # Examples: stop_loss=-0.02, stop_slippage=0.0025 → realized clip at -0.0225.
+    stop_slippage: float = 0.0
     avoid_roll: bool = True
 
 
@@ -69,7 +73,11 @@ def run_hedged_rolldown(config: HedgedRollDownConfig = HedgedRollDownConfig()) -
     data["held"] = held
     data["stop_hit"] = stop_hit
     data["unclipped_ret"] = data["raw_ret"] * data["held"]
-    data["ret"] = data["unclipped_ret"].clip(lower=config.stop_loss) if config.stop_clip and config.stop_loss is not None else data["unclipped_ret"]
+    if config.stop_clip and config.stop_loss is not None:
+        clip_level = config.stop_loss - config.stop_slippage
+        data["ret"] = data["unclipped_ret"].clip(lower=clip_level)
+    else:
+        data["ret"] = data["unclipped_ret"]
     data["equity"] = (1.0 + data["ret"]).cumprod()
     data["peak"] = data["equity"].cummax()
     data["drawdown"] = data["equity"] / data["peak"] - 1.0
