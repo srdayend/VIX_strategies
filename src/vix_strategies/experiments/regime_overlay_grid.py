@@ -34,7 +34,7 @@ def _prepare_frame() -> pd.DataFrame:
     )
     df = df.merge(vix, on="Date", how="left")
     df = df.dropna(subset=["Date", "VX1", "VX2"]).sort_values("Date").reset_index(drop=True)
-    df = df[(df["VX1"] > 0) & (df["VX2"] > 0)].reset_index(drop=True)
+    df = df[(df["VX1"] > 0) & (df["VX2"] > 0)].reset_index(drop=True).copy()
     df["slope"] = np.log(df["VX2"] / df["VX1"])
     df["basis"] = df["VX1"] / df["VIX"] - 1
     df["roll_day"] = (df["VX1_Month"].ne(df["VX1_Month"].shift(1)) | df["VX2_Month"].ne(df["VX2_Month"].shift(1))).fillna(False)
