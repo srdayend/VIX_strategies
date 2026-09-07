@@ -5,8 +5,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-DEFAULT_TERM_STRUCTURE_PATH = Path.home() / "Downloads" / "VIX_futures_term_structure.xlsx"
-DEFAULT_FUTURES_BY_MATURITY_PATH = Path.home() / "Downloads" / "VIX_futures_by_maturity (1).xlsx"
+REPO_ROOT = Path(__file__).resolve().parents[3]
+DATA_DIR = REPO_ROOT / "VIX_Index and futures"
+
+DEFAULT_TERM_STRUCTURE_PATH = DATA_DIR / "VIX_futures_term_structure.xlsx"
+DEFAULT_FUTURES_BY_MATURITY_PATH = DATA_DIR / "VIX_futures_by_maturity (1).xlsx"
+DEFAULT_VIX_INDEX_PATH = DATA_DIR / "CBOE_VIX_Index_Daily_OHLC.xlsx"
 
 
 @dataclass(frozen=True)
@@ -21,25 +25,11 @@ def _env_path(name: str) -> Path | None:
     return Path(raw).expanduser() if raw else None
 
 
-def find_vix_index_path() -> Path:
-    env_path = _env_path("VIX_INDEX_PATH")
-    if env_path:
-        return env_path
-
-    one_drive = Path.home() / "OneDrive"
-    if one_drive.exists():
-        matches = list(one_drive.rglob("CBOE_VIX_Index_Daily_OHLC.xlsx"))
-        if matches:
-            return matches[0]
-
-    return Path.home() / "Downloads" / "CBOE_VIX_Index_Daily_OHLC.xlsx"
-
-
 def get_source_paths() -> SourcePaths:
     return SourcePaths(
         term_structure=_env_path("VIX_TERM_STRUCTURE_PATH") or DEFAULT_TERM_STRUCTURE_PATH,
         futures_by_maturity=_env_path("VIX_FUTURES_BY_MATURITY_PATH") or DEFAULT_FUTURES_BY_MATURITY_PATH,
-        vix_index=find_vix_index_path(),
+        vix_index=_env_path("VIX_INDEX_PATH") or DEFAULT_VIX_INDEX_PATH,
     )
 
 
