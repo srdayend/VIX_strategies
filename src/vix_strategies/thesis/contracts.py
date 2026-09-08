@@ -3,6 +3,7 @@ from __future__ import annotations
 import calendar
 from dataclasses import dataclass
 from datetime import date, timedelta
+from math import isfinite
 from typing import Iterable, Optional, Set
 
 
@@ -60,8 +61,8 @@ class ContractRecord:
     def __post_init__(self) -> None:
         if not self.contract_id:
             raise ValueError("contract_id is required")
-        if self.settlement_price <= 0:
-            raise ValueError("settlement_price must be positive")
+        if not isfinite(self.settlement_price) or self.settlement_price <= 0:
+            raise ValueError("settlement_price must be positive and finite")
         if self.settlement_date_source not in {"official", "derived"}:
             raise ValueError("settlement_date_source must be 'official' or 'derived'")
         if self.listing_type != "monthly":

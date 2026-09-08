@@ -1,4 +1,5 @@
 from datetime import date
+from math import inf, nan
 
 import pytest
 
@@ -22,6 +23,18 @@ def test_contract_record_preserves_actual_contract_identity_and_calendar_dte():
     assert record.contract_id == "VXH26"
     assert record.rank_label == "M1"
     assert record.dte == 5
+
+
+@pytest.mark.parametrize("settlement_price", [nan, inf, -inf])
+def test_contract_record_rejects_non_finite_settlement_price(settlement_price):
+    with pytest.raises(ValueError, match="settlement_price must be positive and finite"):
+        ContractRecord(
+            contract_id="VXH26",
+            trade_date=date(2026, 3, 13),
+            settlement_date=date(2026, 3, 18),
+            settlement_price=settlement_price,
+            settlement_date_source="official",
+        )
 
 
 def test_monthly_vx_settlement_date_uses_third_friday_minus_30_calendar_days():

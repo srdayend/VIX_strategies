@@ -19,7 +19,7 @@ def test_g2a_two_contract_synthetic_path_preserves_economic_invariants():
     trade_date = date(2026, 3, 13)
     next_trade_date = date(2026, 3, 16)
     front = ContractRecord(
-        contract_id="VXH26",
+        contract_id="SYNTH_FRONT",
         trade_date=trade_date,
         settlement_date=date(2026, 3, 23),
         settlement_price=17.0,
@@ -27,7 +27,7 @@ def test_g2a_two_contract_synthetic_path_preserves_economic_invariants():
         settlement_date_source="official",
     )
     deferred = ContractRecord(
-        contract_id="VXJ26",
+        contract_id="SYNTH_DEFERRED",
         trade_date=trade_date,
         settlement_date=date(2026, 4, 22),
         settlement_price=23.0,
@@ -64,8 +64,8 @@ def test_g2a_two_contract_synthetic_path_preserves_economic_invariants():
         curve=curve,
     )
     holding_pnl = same_contract_pnl(
-        [ContractPosition(contract_id="VXH26", quantity=1.0, previous_price=17.0)],
-        {"VXH26": 16.6, "VXJ26": 22.1},
+        [ContractPosition(contract_id="SYNTH_FRONT", quantity=1.0, previous_price=17.0)],
+        {"SYNTH_FRONT": 16.6, "SYNTH_DEFERRED": 22.1},
     )
 
     assert curve_price_at_dte(curve, 0.0) == 15.0
@@ -76,5 +76,5 @@ def test_g2a_two_contract_synthetic_path_preserves_economic_invariants():
     assert compute_spread_cird(front_rd, deferred_rd, hedge_ratio=0.5) == pytest.approx(0.3)
     assert deferred_move.realized == pytest.approx(deferred_move.roll_down + deferred_move.repricing)
     assert deferred_move.repricing == pytest.approx(-0.3)
-    assert holding_pnl.by_contract == {"VXH26": pytest.approx(-0.4)}
+    assert holding_pnl.by_contract == {"SYNTH_FRONT": pytest.approx(-0.4)}
     assert holding_pnl.total == pytest.approx(-0.4)

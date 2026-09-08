@@ -34,13 +34,19 @@ Implemented APIs:
   `ContractRecord` or `ContractRecord.from_monthly_vx`.
 - Rule-derived monthly settlement dates are marked with
   `settlement_date_source="derived"` and are not treated as authoritative.
+- Settlement prices must be positive and finite; NaN and +/-Infinity are
+  rejected.
 - The monthly schema is explicit: G2-A accepts monthly contracts and rejects
   weekly listing types.
 - Calendar DTE is computed as `(settlement_date - trade_date).days`, so a
   Friday-to-Monday interval ages by three calendar days.
 - The primary local curve is price-linear over calendar DTE and anchors VIX
   at tau 0.
+- `LocalCurve` enforces the tau 0 VIX anchor and strictly increasing DTEs,
+  including when directly constructed without `build_local_curve`.
 - Contract roll-down is `Fhat_t(next_dte) - current_price`.
+- Generic daily contract roll-down rejects `next_dte == 0`; final VX
+  SOQ/timestamp-aware settlement handling remains a later-gate concern.
 - Contract roll-down validates that the current DTE is on the local curve and
   that the current settlement price matches the curve at that DTE.
 - Realized decomposition is exact by construction:
@@ -72,13 +78,13 @@ Implemented APIs:
   - GREEN: 1 passed.
 - `python -m pytest tests/thesis/test_contracts.py -v`
   - RED: `ModuleNotFoundError: No module named 'vix_strategies.thesis.contracts'`.
-  - GREEN: 9 passed.
+  - GREEN: 12 passed.
 - `python -m pytest tests/thesis/test_curve.py -v`
   - RED: `ModuleNotFoundError: No module named 'vix_strategies.thesis.curve'`.
-  - GREEN: 6 passed.
+  - GREEN: 8 passed.
 - `python -m pytest tests/thesis/test_cird.py -v`
   - RED: `ModuleNotFoundError: No module named 'vix_strategies.thesis.cird'`.
-  - GREEN: 7 passed.
+  - GREEN: 8 passed.
 - `python -m pytest tests/thesis/test_positions.py -v`
   - RED: `ModuleNotFoundError: No module named 'vix_strategies.thesis.positions'`.
   - GREEN: 3 passed.
@@ -86,7 +92,7 @@ Implemented APIs:
   - RED: package-level thesis exports were not wired.
   - GREEN: 1 passed.
 - Current full test command: `python -m pytest -v`
-  - Result: 27 passed in 0.62s.
+  - Result: 33 passed in 0.54s.
 
 ## Scope Checks
 
@@ -108,6 +114,9 @@ denominator was introduced.
 - Weekly VX contracts are out of scope.
 - Full roll execution, close/open transactions, transaction costs, and new
   cost basis events remain later-gate work.
+- Final VX SOQ/timestamp-aware endpoint handling remains later-gate work;
+  G2-A daily CIRD rejects `next_dte == 0` instead of treating it as an
+  ordinary daily interval.
 - Capital, margin, and investment-return denominator conventions remain
   intentionally undefined.
 

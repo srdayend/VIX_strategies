@@ -73,6 +73,8 @@ def _validate_interval(current_price: float, current_dte: float, next_dte: float
     for value, name in [(current_dte, "current_dte"), (next_dte, "next_dte")]:
         if not isfinite(value) or value < 0:
             raise ValueError(f"{name} must be non-negative and finite")
+    if next_dte == 0:
+        raise ValueError("next_dte == 0 requires final-settlement-specific handling")
     if next_dte > current_dte:
         raise ValueError("next_dte cannot exceed current_dte")
 

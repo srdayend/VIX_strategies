@@ -2,6 +2,7 @@ import pytest
 
 from vix_strategies.thesis.curve import (
     CurvePoint,
+    LocalCurve,
     build_local_curve,
     curve_price_at_dte,
 )
@@ -26,6 +27,22 @@ def test_curve_interpolates_linearly_between_vix_m1_and_m1_m2():
 
     assert curve_price_at_dte(curve, 5.0) == 16.0
     assert curve_price_at_dte(curve, 25.0) == 19.0
+
+
+def test_direct_local_curve_requires_vix_anchor_at_zero_dte():
+    with pytest.raises(ValueError, match="VIX anchor at dte 0"):
+        LocalCurve(points=(CurvePoint(dte=10.0, price=17.0), CurvePoint(dte=40.0, price=21.0)))
+
+
+def test_direct_local_curve_requires_strictly_increasing_dte():
+    with pytest.raises(ValueError, match="strictly increasing"):
+        LocalCurve(
+            points=(
+                CurvePoint(dte=0.0, price=15.0),
+                CurvePoint(dte=40.0, price=21.0),
+                CurvePoint(dte=10.0, price=17.0),
+            )
+        )
 
 
 def test_curve_rejects_unsorted_futures_dtes():

@@ -58,6 +58,21 @@ def test_roll_down_rejects_current_price_inconsistent_with_same_day_curve():
         )
 
 
+def test_roll_down_rejects_final_settlement_endpoint():
+    curve = build_local_curve(
+        vix_level=15.0,
+        futures_points=[CurvePoint(dte=1.0, price=15.2), CurvePoint(dte=30.0, price=21.0)],
+    )
+
+    with pytest.raises(ValueError, match="next_dte == 0"):
+        compute_contract_roll_down(
+            current_price=15.2,
+            current_dte=1.0,
+            next_dte=0.0,
+            curve=curve,
+        )
+
+
 def test_front_long_roll_down_is_hedge_carry_cost_under_simple_contango():
     curve = build_local_curve(
         vix_level=15.0,

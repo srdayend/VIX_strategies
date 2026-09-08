@@ -21,6 +21,20 @@ class CurvePoint:
 class LocalCurve:
     points: Tuple[CurvePoint, ...]
 
+    def __post_init__(self) -> None:
+        if not self.points:
+            raise ValueError("LocalCurve requires at least a VIX anchor and one futures point")
+        if self.points[0].dte != 0:
+            raise ValueError("LocalCurve requires a VIX anchor at dte 0")
+        if len(self.points) < 2:
+            raise ValueError("LocalCurve requires at least one futures point")
+
+        last_dte = self.points[0].dte
+        for point in self.points[1:]:
+            if point.dte <= last_dte:
+                raise ValueError("LocalCurve DTEs must be strictly increasing")
+            last_dte = point.dte
+
 
 def build_local_curve(vix_level: float, futures_points: Sequence[CurvePoint]) -> LocalCurve:
     if not isfinite(vix_level) or vix_level <= 0:
