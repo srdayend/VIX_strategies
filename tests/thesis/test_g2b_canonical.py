@@ -87,6 +87,40 @@ def test_final_settlement_date_row_becomes_final_soq_not_daily_curve_point():
     assert not row.is_primary_curve_eligible
 
 
+def test_final_soq_allows_zero_ohlc_from_source_without_price_repair():
+    row = canonicalize_raw_record(
+        _raw_record(
+            trade_date=date(2026, 5, 20),
+            raw_open="0.00",
+            raw_high="0.00",
+            raw_low="0.00",
+            raw_close="0.00",
+            raw_settle="19.05",
+        ),
+        calendar_entry=_calendar_entry(final_settlement_date=date(2026, 5, 20)),
+    )
+
+    assert row.observation_type == ObservationType.FINAL_SOQ
+    assert row.open_norm is None
+    assert row.high_norm is None
+    assert row.low_norm is None
+    assert row.close_norm is None
+    assert row.settle_norm == pytest.approx(19.05)
+    assert "final_soq_zero_ohlc" in row.quality_flags
+    assert not row.is_primary_curve_eligible
+
+
+def test_non_positive_daily_settlement_is_flagged_ineligible_not_forward_filled():
+    row = canonicalize_raw_record(
+        _raw_record(raw_settle="0.00"),
+        calendar_entry=_calendar_entry(),
+    )
+
+    assert row.settle_norm is None
+    assert "non_positive_settlement" in row.quality_flags
+    assert not row.is_primary_curve_eligible
+
+
 @pytest.mark.parametrize(
     "trade_date, expected_role",
     [

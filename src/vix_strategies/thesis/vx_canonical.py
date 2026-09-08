@@ -3,7 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 from enum import Enum
-from typing import Optional, Tuple
+from math import isfinite
+from typing import List, Optional, Tuple
 
 from vix_strategies.thesis.vx_calendar import (
     ContractCalendarEntry,
@@ -99,6 +100,8 @@ def canonicalize_raw_record(
         raw_record.trade_date,
         raw_record.raw_row_id,
         "Settle",
+        "settlement",
+        quality_flags,
     )
     if settle_norm is None:
         quality_flags.append("missing_settlement")
@@ -122,24 +125,36 @@ def canonicalize_raw_record(
             raw_record.trade_date,
             raw_record.raw_row_id,
             "Open",
+            "open",
+            quality_flags,
+            observation_type=observation_type,
         ),
         high_norm=_normalize_optional_price(
             raw_record.raw_high,
             raw_record.trade_date,
             raw_record.raw_row_id,
             "High",
+            "high",
+            quality_flags,
+            observation_type=observation_type,
         ),
         low_norm=_normalize_optional_price(
             raw_record.raw_low,
             raw_record.trade_date,
             raw_record.raw_row_id,
             "Low",
+            "low",
+            quality_flags,
+            observation_type=observation_type,
         ),
         close_norm=_normalize_optional_price(
             raw_record.raw_close,
             raw_record.trade_date,
             raw_record.raw_row_id,
             "Close",
+            "close",
+            quality_flags,
+            observation_type=observation_type,
         ),
         settle_norm=settle_norm,
         volume=_parse_optional_int(raw_record.raw_volume, raw_record.raw_row_id, "Total Volume"),
@@ -167,6 +182,9 @@ def _normalize_optional_price(
     trade_date: date,
     row_id: str,
     field_name: str,
+    quality_flag_name: str,
+    quality_flags: List[str],
+    observation_type: ObservationType = ObservationType.DAILY_DSP,
 ) -> Optional[float]:
     if raw_value is None:
         return None
@@ -174,6 +192,19 @@ def _normalize_optional_price(
         parsed = float(raw_value)
     except ValueError as exc:
         raise ValueError(f"invalid {field_name} price at {row_id}: {raw_value}") from exc
+    if not isfinite(parsed):
+        _add_quality_flag(quality_flags, f"non_finite_{quality_flag_name}")
+        return None
+    if parsed <= 0:
+        if (
+            observation_type == ObservationType.FINAL_SOQ
+            and quality_flag_name in {"open", "high", "low", "close"}
+            and parsed == 0
+        ):
+            _add_quality_flag(quality_flags, "final_soq_zero_ohlc")
+            return None
+        _add_quality_flag(quality_flags, f"non_positive_{quality_flag_name}")
+        return None
     return normalize_vx_price(trade_date, parsed)
 
 
@@ -188,3 +219,8 @@ def _parse_optional_int(
         return int(raw_value.replace(",", ""))
     except ValueError as exc:
         raise ValueError(f"invalid {field_name} at {row_id}: {raw_value}") from exc
+
+
+def _add_quality_flag(quality_flags: List[str], flag: str) -> None:
+    if flag not in quality_flags:
+        quality_flags.append(flag)

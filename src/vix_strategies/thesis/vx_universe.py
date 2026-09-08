@@ -52,6 +52,18 @@ def classify_vx_listing(
         )
     if _looks_like_weekly_vx(compact):
         return ListingClassification(ListingType.WEEKLY, False, "weekly VX")
+    if _looks_like_archive_month_code(compact):
+        if final_settlement_date == expected_monthly_final_settlement_date:
+            return ListingClassification(
+                ListingType.STANDARD_MONTHLY,
+                True,
+                "archive month-code symbol with matching monthly settlement calendar evidence",
+            )
+        return ListingClassification(
+            ListingType.NON_MONTHLY_VX,
+            False,
+            "archive month-code settlement date does not match monthly calendar evidence",
+        )
     if not compact.startswith("VX"):
         return ListingClassification(ListingType.UNKNOWN, False, "not VX")
     if final_settlement_date != expected_monthly_final_settlement_date:
@@ -90,3 +102,10 @@ def _looks_like_spread_or_combination(symbol: str) -> bool:
 
 def _looks_like_weekly_vx(symbol: str) -> bool:
     return re.match(r"^VX\d+[/\s-]", symbol) is not None
+
+
+def _looks_like_archive_month_code(symbol: str) -> bool:
+    return re.match(
+        r"^[FGHJKMNQUVXZ]\s+\([A-Z]{3}\s+\d{2}\)$",
+        symbol,
+    ) is not None

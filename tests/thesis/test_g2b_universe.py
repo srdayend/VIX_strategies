@@ -30,6 +30,17 @@ def test_standard_monthly_vx_is_primary_when_calendar_evidence_matches():
     )
 
 
+def test_archive_month_code_symbol_is_primary_when_calendar_evidence_matches():
+    classification = classify_vx_listing(
+        "F (Jan 13)",
+        final_settlement_date=date(2013, 1, 16),
+        expected_monthly_final_settlement_date=date(2013, 1, 16),
+    )
+
+    assert classification.listing_type == ListingType.STANDARD_MONTHLY
+    assert classification.is_primary
+
+
 def test_vx_weekly_is_excluded_even_when_root_is_vx():
     classification = classify_vx_listing(
         "VX36/U6",
