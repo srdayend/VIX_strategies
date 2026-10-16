@@ -1,97 +1,64 @@
-# VIX Strategies Research Lab
+# VIX Futures Calendar-Spread Research
 
-Research workspace for VIX futures calendar-spread strategies.
+**Can a short deferred VIX future, hedged with a long front future, earn roll-down carry without taking unacceptable volatility risk?**
 
-The project studies a hedged VIX futures roll-down trade:
+This project grew out of my FIXERS derivatives research. I proposed a hedged VIX futures roll-down strategy, assembled contract-level source data, compared hedge ratios, and tested entry/exit rules and different market conditions. I also presented the work at an inter-club research session.
 
-```text
-Position = r * VX1 - 1.00 * VX2
-front_slope = ln(VX2 / VX1)
-```
+This repository continues a team research project. Python implementation was developed with AI coding tools; I led the research logic and analysis workflow.
 
-The core idea is to short the deferred VIX future (`VX2`) to harvest roll-down carry, while buying the front future (`VX1`) to hedge volatility spikes. The main research question is how much VX1 should be held against one unit of short VX2.
-
-## Current View
-
-- VIX spot has a low-base, right-tail spike structure.
-- VIX futures are usually in contango, especially at the front of the curve.
-- A simple `1.00VX1 - 1.00VX2` spread is not the cleanest baseline because it buys more VX1 than the observed median spike hedge requires.
-- The economic anchor is around `0.65VX1 - VX2`, based on spike-day `dVX2 / dVX1`.
-- The more rigorous realized-PnL sizing points to `0.70VX1 - VX2` as the cleaner baseline.
-- `0.80VX1 - VX2` is a stronger spike-hedge / high-Sharpe candidate, but it is more front-volatility tilted.
-- The next major robustness steps are basis-aware ratio rules, contract-level testing, transaction costs, and stop-slippage assumptions.
-
-## Best Reading Path
-
-For a quick handoff, read these in order:
-
-1. [`docs/00_research_summary.md`](docs/00_research_summary.md) - current synthesis and conclusions.
-2. [`docs/03_results/vix_distribution_rolldown_hedge_ratio.md`](docs/03_results/vix_distribution_rolldown_hedge_ratio.md) - baseline weight study and latest sizing logic.
-3. [`docs/03_results/hedge_ratio_065_vs_080.md`](docs/03_results/hedge_ratio_065_vs_080.md) - why `0.65` and `0.80` behave differently.
-4. [`docs/03_results/stop_loss_parameter_grid.md`](docs/03_results/stop_loss_parameter_grid.md) - entry/exit and stop-loss sensitivity.
-5. [`docs/03_results/regime_overlay_grid.md`](docs/03_results/regime_overlay_grid.md) - VIX, slope, and basis regime overlays.
-
-The full document index is in [`docs/README.md`](docs/README.md).
-
-## Repository Map
+## The position
 
 ```text
-docs/
-  00_research_summary.md       Current synthesis
-  01_data/                     Source data notes and first-pass findings
-  02_strategy/                 Strategy framing and peer research baseline
-  03_results/                  Main result notes and interpretation
-  04_backlog/                  Open research tasks
-  code_execution_guide.md      Code-to-result map
-
-src/vix_strategies/
-  data/                        Excel loaders and source path resolution
-  analysis/                    Data diagnostics and baseline weight study
-  backtests/                   Reusable strategy engines
-  experiments/                 Parameter grids and peer reproduction scripts
-
-reports/generated/             Reproducible CSV and chart outputs
+Position = r × VX1 − 1 × VX2
 ```
 
-## Source Data
+`VX1` is the front VIX future and `VX2` the second-month future. The short `VX2` leg seeks to benefit from a downward roll along the term structure, while the long `VX1` leg is intended to reduce sensitivity to volatility spikes.
 
-The repository does not store the Excel source workbooks. By default, the code expects:
+The research question is not just which hedge ratio backtests best, but **what risk the ratio actually adds or removes**.
 
-```text
-C:\Users\user\Downloads\VIX_futures_term_structure.xlsx
-C:\Users\user\Downloads\VIX_futures_by_maturity (1).xlsx
-C:\Users\user\OneDrive\바탕 화면\outputs\vix_cboe\CBOE_VIX_Index_Daily_OHLC.xlsx
-```
+## Findings so far
 
-Override paths with:
+- Around **0.65** is an initial hedge-ratio anchor based on the response of adjacent futures during VIX spikes.
+- Around **0.70** emerged as a more defensible realized-PnL baseline in later daily-return analysis.
+- A **0.80** hedge improved some backtest statistics, but its advantage was particularly sensitive to front-futures basis and volatility rebound days.
+- Entry/exit timing, roll dates, stop assumptions, and contract-level trading costs can materially change the result.
 
-```text
-VIX_TERM_STRUCTURE_PATH
-VIX_FUTURES_BY_MATURITY_PATH
-VIX_INDEX_PATH
-```
+### Illustrative historical backtest (not a live result)
 
-## Quick Start
+| Hedge ratio | Model | Sharpe | Max drawdown |
+|---|---|---:|---:|
+| 0.65 | Daily-price, close-only stop | 1.100 | −12.06% |
+| 0.80 | Daily-price, close-only stop | 1.400 | −11.08% |
 
-Install dependencies:
+These are historical model outputs, **not fully cost-adjusted executable returns**. The project has not yet established actual stop fills, complete transaction costs, open interest/capacity, or margin feasibility. A stop-clipped backtest is a scenario assumption, not proof of intraday execution.
+
+## What I tested
+
+- Hedge-ratio selection using adjacent-maturity VIX futures behavior.
+- Term-structure slope and VIX-state filters.
+- Fixed hedge ratios versus front-basis regimes.
+- Entry and exit thresholds; rank-roll handling; sensitivity to stop assumptions.
+- Return attribution by market regime and whether better results came from carry or additional front-volatility exposure.
+
+## Repository navigation
+
+- [`docs/00_research_summary.md`](docs/00_research_summary.md) — findings and limitations.
+- [`docs/03_results/hedge_ratio_065_vs_080.md`](docs/03_results/hedge_ratio_065_vs_080.md) — comparison of alternative hedge ratios.
+- [`docs/03_results/stop_loss_parameter_grid.md`](docs/03_results/stop_loss_parameter_grid.md) — stop-assumption sensitivity.
+- [`src/vix_strategies/backtests/`](src/vix_strategies/backtests/) — backtesting logic.
+- [`src/vix_strategies/experiments/`](src/vix_strategies/experiments/) — experiment scripts (source workbooks required).
+
+## Running the code
 
 ```bash
 pip install -r requirements.txt
-```
-
-Run the latest baseline weight study:
-
-```bash
-python -m src.vix_strategies.analysis.vix_distribution_rolldown_hedge_ratio
-```
-
-Run the main strategy experiments:
-
-```bash
-python -m src.vix_strategies.experiments.reproduce_peer_research
 python -m src.vix_strategies.experiments.compare_065_vs_080_hedge_ratios
-python -m src.vix_strategies.experiments.stop_loss_parameter_grid
-python -m src.vix_strategies.experiments.regime_overlay_grid
 ```
 
-Generated outputs are written under `reports/generated/`.
+The original third-party/CBOE-sourced Excel workbooks are **not included**. Set the appropriate data paths using the environment variables described in the [existing execution guide](docs/code_execution_guide.md). Full reproduction of reported results requires the same source datasets and preprocessing assumptions.
+
+## Next work
+
+Contract-expiry-aware testing; fuller transaction costs and roll/slippage modeling; more realistic stop fills; liquidity and margin checks; and a separated out-of-sample test.
+
+**Research only. No claim of live profitability.**
